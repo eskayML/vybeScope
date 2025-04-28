@@ -2,7 +2,9 @@
   "6423826292": {
     "wallets": [
       "2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy",
-      "HzsMcybwTDDEdAboNLo9TWT37s8WWuqjcdMGkQxbDuDn"
+      "HzsMcybwTDDEdAboNLo9TWT37s8WWuqjcdMGkQxbDuDn",
+      "4vuwSTqzrnbrtrdjEzz3XDTYgumVsSfHZVeWF82VqRiX",
+      "J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah"
     ],
     "whale_alert": {
       "threshold": 500000.0,

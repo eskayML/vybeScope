@@ -26,7 +26,7 @@ from core.dashboard import (
     remove_tracked_wallet,
     set_whale_alert_threshold,
 )
-from core.token_stats import process_token
+from core.token_stats import process_token, show_top_holders
 from core.token_stats import token_prompt as core_token_prompt  # Rename to avoid clash
 from core.wallet_tracker import process_wallet
 from core.wallet_tracker import (
@@ -478,6 +478,16 @@ async def button_handler(update: Update, context: Application) -> None:
     elif callback_data == "dashboard_set_threshold":
         user_states[user_id] = "dashboard_awaiting_set_threshold"
         await query.message.reply_text("🐋 Enter the new whale alert threshold (USD):")
+    elif callback_data.startswith("show_top_holders_"):
+        token_address = callback_data.replace("show_top_holders_", "")
+        await show_top_holders(user_id, token_address, context)
+    elif callback_data.startswith("token_stats_back_"):
+        # Only delete the top holders message, do not show token stats again
+        try:
+            await query.message.delete()
+        except Exception as e:
+            logger.warning(f"Failed to delete top holders message: {e}")
+        return
     else:
         logger.info(f"Received unhandled callback_data: {callback_data}")
         # Optionally send a message if the callback is unknown

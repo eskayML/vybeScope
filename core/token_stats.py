@@ -7,7 +7,8 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ChatAction
 from telegram.ext import Application
 
-from api import fetch_token_stats
+from api import fetch_token_stats, fetch_top_token_holders
+from core.top_holders_table import format_top_holders_text
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,37 @@ async def token_prompt(update: Update, context: Application, user_states: dict) 
         "📈 Enter a token symbol (e.g. WIF, PYTH, JTO, TRUMP) or the full contract address to check its stats:"
     )
     user_states[user_id] = "awaiting_token"
+
+
+async def show_top_holders(user_id: int, token_address: str, context: Application):
+    await context.bot.send_chat_action(chat_id=user_id, action=ChatAction.TYPING)
+    try:
+        holders = fetch_top_token_holders(token_address)
+        holders_text = format_top_holders_text(holders)
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "Back to Token Stats",
+                    callback_data=f"token_stats_back_{token_address}",
+                )
+            ]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        sent_msg = await context.bot.send_message(
+            chat_id=user_id,
+            text=holders_text,
+            reply_markup=reply_markup,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+        )
+        # Store the message id for deletion
+        context.user_data["last_top_holders_msg_id"] = sent_msg.message_id
+    except Exception as e:
+        logger.error(f"Error fetching top holders: {e}")
+        await context.bot.send_message(
+            chat_id=user_id,
+            text="❌ Failed to fetch top holders.",
+        )
 
 
 async def process_token(user_id: int, token_input: str, context: Application) -> None:
@@ -96,14 +128,14 @@ async def process_token(user_id: int, token_input: str, context: Application) ->
         )
         return
 
-    # Show pepe_sniper image with fetching text before fetching stats
+    # Show pepe_sniper image with fetching text before Scoping stats
     image_path = "assets/pepe_sniper.jpg"
     image_msg = None
     try:
         image_msg = await context.bot.send_photo(
             chat_id=user_id,
             photo=image_path,
-            caption=f"🔍 Fetching stats for {token_symbol} ({token_address[:6]}...{token_address[-4:]})...",
+            caption=f"🔍 Scoping stats for {token_symbol} ({token_address[:6]}...{token_address[-4:]})...",
         )
     except Exception as e:
         logger.warning(f"Failed to send image: {e}")
@@ -174,18 +206,6 @@ async def process_token(user_id: int, token_input: str, context: Application) ->
             f"https://vybe.fyi/tokens/{fetched_address}" if fetched_address else None
         )
 
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "Check Another Token/Address 📈", callback_data="token_stats"
-                )
-            ],
-            [
-                InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")
-            ],  # Add back button
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
         # --- Updated Response Text ---
         response_text = (
             f"📊 *{fetched_name} ({fetched_symbol}) Stats*\n"
@@ -198,6 +218,23 @@ async def process_token(user_id: int, token_input: str, context: Application) ->
         if explorer_url:
             response_text += f"\n[More details]({explorer_url})"
         # --- End Updated Response Text ---
+
+        # --- Add Top Holders Button ---
+        keyboard = [
+            [
+                InlineKeyboardButton(
+                    "Show Top Holders 🏆",
+                    callback_data=f"show_top_holders_{fetched_address}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "Check Another Token/Address 📈", callback_data="token_stats"
+                )
+            ],
+            [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
 
         # --- Send Message/Photo ---
         if logo_url:

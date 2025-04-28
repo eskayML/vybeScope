@@ -47,6 +47,24 @@ def get_wallet_token_balance(owner_address):
     return response.json()
 
 
+def fetch_top_token_holders(mint_address, count=5):
+    """
+    Fetch the top holders of a token from Vybe API.
+
+    Args:
+        mint_address (str): The token's mint address.
+        count (int): Number of top holders to return. Defaults to 10.
+
+    Returns:
+        list of dict: Top token holders.
+    """
+    url = f"{BASE_URL}/token/{mint_address}/top-holders"
+    response = requests.get(url, headers=HEADERS)
+    response.raise_for_status()
+    data = response.json()
+    return data.get("data", [])[:count]
+
+
 if __name__ == "__main__":
     # balance = get_wallet_token_balance("2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy")
     # print(balance)
@@ -54,10 +72,11 @@ if __name__ == "__main__":
     # activity = fetch_wallet_activity("HzsMcybwTDDEdAboNLo9TWT37s8WWuqjcdMGkQxbDuDn")
     # print(activity)
 
+    top_holders = fetch_top_token_holders("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
+    print(top_holders)
 
-    transactions = fetch_whale_transactions()
-    print(transactions)
-
+    # transactions = fetch_whale_transactions()
+    # print(transactions)
 
     # token_stats = fetch_token_stats("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
 

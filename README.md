@@ -1,4 +1,4 @@
-# Vybe Telegram Bot
+# VybeScope Telegram Bot
 
 A Python-based Telegram bot for the Vybe hackathon challenge. This bot allows users to connect their crypto wallets, view transactions, manage settings, and receive whale alerts for large transactions through an intuitive interface.
 
@@ -16,7 +16,7 @@ A Python-based Telegram bot for the Vybe hackathon challenge. This bot allows us
 ## Project Structure
 
 ```
-vybe-bot/
+vybescope/
 ├── main.py               # Main bot entry point
 ├── bot_handler.py        # Bot functionality handler
 ├── wallet.py             # Wallet connection and transaction handling
@@ -30,8 +30,8 @@ vybe-bot/
 
 1. Clone this repository:
    ```
-   git clone https://github.com/your-username/vybe-bot.git
-   cd vybe-bot
+   git clone https://github.com/your-username/vybescope.git
+   cd vybescope
    ```
 
 2. Install dependencies:
@@ -59,13 +59,6 @@ vybe-bot/
 
 ## Bot Commands
 
-- `/start` - Start the bot and display the main menu
-- `/menu` - Return to the main menu
-- `/help` - Display help information
-- `/threshold` - Set a custom threshold for whale alerts
-- `/check` - Check recent whale transactions
-- `/token` - Search for token information
-- `/wallet` - Search for wallet activity
 
 ## User Interface
 

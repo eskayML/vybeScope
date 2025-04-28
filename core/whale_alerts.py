@@ -5,7 +5,7 @@ import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application
 
-from api import fetch_transactions
+from api import fetch_whale_transactions
 
 from .utils import format_transaction_details
 
@@ -68,7 +68,7 @@ async def check_highest_whale_tx(update: Update, context: Application) -> None:
     await message.reply_text("🔍 Fetching latest transactions to find the highest whale move...")
 
     try:
-        data = fetch_transactions() # Assumes this fetches recent large transfers
+        data = fetch_whale_transactions() # Assumes this fetches recent large transfers
         transactions = data.get("transfers", [])
 
         if not transactions:

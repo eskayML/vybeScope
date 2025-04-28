@@ -1,6 +1,6 @@
 import logging
 import re
-
+import time
 import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application
@@ -70,10 +70,18 @@ async def process_wallet(
         )
         return
 
-    await context.bot.send_message(
-        chat_id=user_id,
-        text=f"⏳ Fetching token balances for wallet `{wallet_address[:6]}...`",
-    )
+    # Send image before fetching balances, with caption
+    image_path = "assets/pepe_sniper.jpg"
+    image_msg = None
+    try:
+        image_msg = await context.bot.send_photo(
+            chat_id=user_id,
+            photo=image_path,
+            caption=f"⏳ Fetching token balances for wallet `{wallet_address[:6]}...`"
+        )
+    except Exception as e:
+        logger.warning(f"Failed to send image: {e}")
+
     try:
         # Call the balance function
         balance_data = get_wallet_token_balance(wallet_address)
@@ -245,6 +253,15 @@ async def process_wallet(
             parse_mode="Markdown",
             disable_web_page_preview=True,
         )
+        # Delete the image message in a stylish way
+        if image_msg:
+            time.sleep(3)  # Optional delay for better UX
+            try:
+                await context.bot.delete_message(
+                    chat_id=user_id, message_id=image_msg.message_id
+                )
+            except Exception as e:
+                logger.warning(f"Failed to delete image message: {e}")
 
     except requests.exceptions.HTTPError as e:
         # Handle potential 404 Not Found for wallets with no activity

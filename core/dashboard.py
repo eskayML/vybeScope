@@ -24,13 +24,17 @@ def _save_dashboard(data):
 
 def get_user_dashboard(user_id):
     data = _load_dashboard()
-    return data.get(str(user_id), {"wallets": [], "whale_alert": {"threshold": None}})
+    return data.get(
+        str(user_id),
+        {"wallets": [], "whale_alert": {"threshold": None, "enabled": False}},
+    )
 
 
 def add_tracked_wallet(user_id, wallet_address):
     data = _load_dashboard()
     user = data.setdefault(
-        str(user_id), {"wallets": [], "whale_alert": {"threshold": None}}
+        str(user_id),
+        {"wallets": [], "whale_alert": {"threshold": None, "enabled": False}},
     )
     if wallet_address not in user["wallets"]:
         user["wallets"].append(wallet_address)
@@ -42,7 +46,8 @@ def add_tracked_wallet(user_id, wallet_address):
 def remove_tracked_wallet(user_id, wallet_address):
     data = _load_dashboard()
     user = data.setdefault(
-        str(user_id), {"wallets": [], "whale_alert": {"threshold": None}}
+        str(user_id),
+        {"wallets": [], "whale_alert": {"threshold": None, "enabled": False}},
     )
     if wallet_address in user["wallets"]:
         user["wallets"].remove(wallet_address)
@@ -54,7 +59,8 @@ def remove_tracked_wallet(user_id, wallet_address):
 def set_whale_alert_threshold(user_id, threshold):
     data = _load_dashboard()
     user = data.setdefault(
-        str(user_id), {"wallets": [], "whale_alert": {"threshold": None}}
+        str(user_id),
+        {"wallets": [], "whale_alert": {"threshold": None, "enabled": False}},
     )
     user["whale_alert"]["threshold"] = threshold
     _save_dashboard(data)
@@ -62,5 +68,27 @@ def set_whale_alert_threshold(user_id, threshold):
 
 def get_whale_alert_threshold(user_id):
     data = _load_dashboard()
-    user = data.get(str(user_id), {"wallets": [], "whale_alert": {"threshold": None}})
+    user = data.get(
+        str(user_id),
+        {"wallets": [], "whale_alert": {"threshold": None, "enabled": False}},
+    )
     return user["whale_alert"].get("threshold")
+
+
+def set_whale_alerts_enabled(user_id, enabled):
+    data = _load_dashboard()
+    user = data.setdefault(
+        str(user_id),
+        {"wallets": [], "whale_alert": {"threshold": None, "enabled": False}},
+    )
+    user["whale_alert"]["enabled"] = enabled
+    _save_dashboard(data)
+
+
+def get_whale_alerts_enabled(user_id):
+    data = _load_dashboard()
+    user = data.get(
+        str(user_id),
+        {"wallets": [], "whale_alert": {"threshold": None, "enabled": False}},
+    )
+    return user["whale_alert"].get("enabled", False)

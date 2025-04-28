@@ -34,7 +34,12 @@ from core.wallet_tracker import (
 )
 
 # Import core functionalities
-from core.whale_alerts import check_highest_whale_tx, whale_alerts_command
+from core.whale_alerts import (
+    check_highest_whale_tx,
+    get_whale_alerts_enabled,
+    toggle_whale_alerts,
+    whale_alerts_command,
+)
 from core.whale_alerts import (
     set_threshold_prompt as core_set_threshold_prompt,  # Rename to avoid clash
 )
@@ -72,7 +77,7 @@ async def start(update: Update, context: Application) -> None:
     )
     user = update.effective_user.first_name
     welcome_message = (
-        f"🚀Welcome to VybeScope, *{user}*! \n"
+        f"🚀Welcome to VybeScope🔭, *{user}*! \n"
         "Perform Actions that directly interact with the Vybe API \n"
         "Track whale alerts, token stats, and wallet activity.\n\n"
         "Choose an action below to get started! 👇"
@@ -196,6 +201,7 @@ async def dashboard_command(update: Update, context: Application) -> None:
     dashboard = get_user_dashboard(user_id)
     wallets = dashboard.get("wallets", [])
     threshold = dashboard.get("whale_alert", {}).get("threshold")
+    whale_alerts_enabled = get_whale_alerts_enabled(user_id)
     is_empty = not wallets and not threshold
 
     # Build the message
@@ -203,38 +209,48 @@ async def dashboard_command(update: Update, context: Application) -> None:
         msg = "📊 *Your Dashboard is Empty!*\n\n"
         msg += "Add a wallet or set a whale alert threshold to get started."
         keyboard = [
-            [InlineKeyboardButton("Add Wallet", callback_data="dashboard_add_wallet")],
             [
                 InlineKeyboardButton(
-                    "Set Whale Threshold", callback_data="dashboard_set_threshold"
-                )
+                    "Add Wallet ➕", callback_data="dashboard_add_wallet"
+                ),
+                InlineKeyboardButton(
+                    "Remove Wallet ➖", callback_data="dashboard_remove_wallet"
+                ),
             ],
-            [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
+            [
+                InlineKeyboardButton(
+                    "Set Whale Threshold ⚙", callback_data="dashboard_set_threshold"
+                ),
+                InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
+            ],
         ]
     else:
         msg = "📊 *Your Dashboard*\n\n"
-        msg += "💼 *Tracked Wallets:*\n"
+        msg += f"💼 *Tracked Wallets ({len(wallets)}):*\n"
         if wallets:
             for w in wallets:
                 msg += f"`{w}`\n"
         else:
             msg += "_None yet. Add one from Wallet Tracker!_\n"
-        msg += "\n🐋 *Whale Alert Threshold:* "
-        msg += f"${threshold:,.2f}" if threshold else "_Not set_"
+        msg += "\n🐋 *Whale Alert Settings:*\n"
+        msg += f"Status: {'🟢 Enabled' if whale_alerts_enabled else '🔴 Disabled'}\n"
+        msg += f"Threshold: ${threshold:,.2f}" if threshold else "Threshold: _Not set_"
         msg += "\n\nUse the buttons below to manage your dashboard."
         keyboard = [
-            [InlineKeyboardButton("Add Wallet", callback_data="dashboard_add_wallet")],
             [
                 InlineKeyboardButton(
-                    "Remove Wallet", callback_data="dashboard_remove_wallet"
-                )
+                    "Add Wallet ➕", callback_data="dashboard_add_wallet"
+                ),
+                InlineKeyboardButton(
+                    "Remove Wallet ➖", callback_data="dashboard_remove_wallet"
+                ),
             ],
             [
                 InlineKeyboardButton(
-                    "Set Whale Threshold", callback_data="dashboard_set_threshold"
-                )
+                    "Set Whale Threshold ⚙", callback_data="dashboard_set_threshold"
+                ),
+                InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
             ],
-            [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
         ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -426,6 +442,8 @@ async def button_handler(update: Update, context: Application) -> None:
         await start(update, context)
     elif callback_data == "whale_alerts":
         await whale_alerts_command(update, context)
+    elif callback_data in ["toggle_whale_on", "toggle_whale_off"]:
+        await toggle_whale_alerts(update, context)
     elif callback_data == "set_threshold":
         # Pass user_states dictionary
         await core_set_threshold_prompt(update, context, user_states)

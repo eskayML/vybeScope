@@ -131,9 +131,21 @@ async def start(update: Update, context: Application) -> None:
     try:
         if update.callback_query:
             # Edit the existing message if it came from a button press (like 'Back to Main Menu')
-            await message.edit_text(
-                text=welcome_message, reply_markup=reply_markup, parse_mode="Markdown"
-            )
+            # Only edit if the message has text (not a photo or media)
+            if getattr(message, "text", None):
+                await message.edit_text(
+                    text=welcome_message,
+                    reply_markup=reply_markup,
+                    parse_mode="Markdown",
+                )
+            else:
+                # If message has no text (e.g., it's a photo), send a new message
+                await context.bot.send_message(
+                    chat_id=update.effective_chat.id,
+                    text=welcome_message,
+                    reply_markup=reply_markup,
+                    parse_mode="Markdown",
+                )
         else:
             # Send a new message if it came from the /start command
             await message.reply_text(

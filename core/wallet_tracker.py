@@ -70,18 +70,21 @@ async def process_wallet(
         )
         return
 
-    # Send image before fetching balances, with caption
+    # Send image before fetching balances
     image_path = "assets/pepe_sniper.jpg"
     image_msg = None
     try:
         image_msg = await context.bot.send_photo(
             chat_id=user_id,
             photo=image_path,
-            caption=f"⏳ Fetching token balances for wallet `{wallet_address[:6]}...`"
         )
     except Exception as e:
         logger.warning(f"Failed to send image: {e}")
 
+    await context.bot.send_message(
+        chat_id=user_id,
+        text=f"⏳ Finding token balances for wallet `{wallet_address[:6]}...`",
+    )
     try:
         # Call the balance function
         balance_data = get_wallet_token_balance(wallet_address)

@@ -93,6 +93,10 @@ async def start(update: Update, context: Application) -> None:
         [
             InlineKeyboardButton("Token Statistics 📈", callback_data="token_stats"),
         ],
+        [
+            InlineKeyboardButton("Quick Commands ⚡", callback_data="quick_commands"),
+            InlineKeyboardButton("Research Agent 🤖", callback_data="research_agent"),
+        ],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 

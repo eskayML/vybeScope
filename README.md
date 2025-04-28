@@ -1,34 +1,17 @@
 # VybeScope Telegram Bot
 
-A Python-based Telegram bot for the Vybe hackathon challenge. This bot allows users to connect their crypto wallets, view transactions, manage settings, and receive whale alerts for large transactions through an intuitive interface.
+VybeScope is a feature-rich Python Telegram bot for Solana users, offering real-time wallet tracking, token stats, and whale alerts—all with zero database setup. Users can connect and monitor multiple wallets, view live balances and 24h changes, and receive instant notifications for large transactions (whale alerts) with customizable thresholds. The bot provides detailed token statistics, top holders, and market data for any Solana token, plus a personal dashboard to manage tracked wallets and alert settings. All data is stored in-memory or lightweight JSON, ensuring privacy and fast setup. The intuitive button-based interface makes it easy to add/remove wallets, set whale alert thresholds, and explore token analytics. VybeScope is ideal for traders, investors, and enthusiasts who want actionable Solana insights directly in Telegram.
 
-## Features
+## Key Features
+- 🔗 Connect and track multiple Solana wallets
+- 🐋 Customizable whale alerts for large transactions
+- 📊 Token stats, price, and top holders lookup
+- 💼 Personal dashboard for wallet and alert management
+- 🔔 Real-time notifications and analytics
+- ⚡ No database required—lightweight and portable
 
-- 💰 **Wallet Connection**: Connect Phantom, Solflare, or Backpack wallets
-- 📊 **Transaction Management**: View and manage your crypto transactions
-- 🐋 **Whale Alerts**: Get notified of large cryptocurrency transactions
-- 🪙 **Balance Checking**: Check your cryptocurrency balances
-- 📈 **Token Statistics**: Look up token prices and market data
-- 🔍 **Wallet Tracking**: Monitor activity for any Solana address
-- ⚙️ **User Settings**: Customize notifications, language, and privacy settings
-- 🔄 **In-Memory Storage**: Lightweight implementation with no database dependencies
-
-## Project Structure
-
-```
-vybescope/
-├── main.py               # Main bot entry point
-├── bot_handler.py        # Bot functionality handler
-├── wallet.py             # Wallet connection and transaction handling
-├── utils.py              # Utility functions
-├── requirements.txt      # Python dependencies
-├── .env-example          # Example environment variables
-└── README.md             # Project documentation
-```
-
-## Installation
-
-1. Clone this repository:
+## Quick Start
+1. Clone the repo and install requirements:
    ```
    git clone https://github.com/your-username/vybescope.git
    cd vybescope
@@ -47,15 +30,8 @@ vybescope/
 
 4. Start the bot:
    ```
-   python main.py
+   python bot.py
    ```
-
-## Getting a Telegram Bot Token
-
-1. Open Telegram and search for `@BotFather`
-2. Start a chat and send `/newbot`
-3. Follow the instructions to create a new bot
-4. Copy the token provided by BotFather and add it to your `.env` file
 
 ## Bot Commands
 
@@ -66,11 +42,13 @@ The bot features an intuitive button-based interface that allows users to:
 
 - Connect their cryptocurrency wallets
 - View and manage transactions
+- Enable Whale Alerts.
 - Set custom thresholds for whale alerts
 - Check token prices and statistics
-- Monitor wallet activity
+- View Highest Holders (Whale Wallets).
+- Monitor wallet activity.
 - Adjust settings and preferences
-- Get help and support
+- Get help and support.
 
 ## Whale Alert Feature
 

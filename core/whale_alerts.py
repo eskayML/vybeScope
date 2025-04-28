@@ -1,5 +1,6 @@
 import logging
 import os
+import time
 from decimal import Decimal, InvalidOperation
 
 import requests
@@ -48,7 +49,7 @@ async def whale_alerts_command(update: Update, context: Application) -> None:
     await message.reply_text(
         "🐳 *Whale Alert Options* ⚙️\n\n"
         f"Alerts are currently {'🟢 ON' if is_enabled else '🔴 OFF'}\n\n"
-        "Set a USD threshold for future alerts or check the latest single highest transaction detected.",
+        "Set a USD threshold (default is 50,000) for future alerts or check the latest single highest transaction detected.",
         reply_markup=reply_markup,
         parse_mode="Markdown",
     )
@@ -70,10 +71,19 @@ async def toggle_whale_alerts(update: Update, context: Application) -> None:
     )
 
     if new_state:
-        # Send whale image without auto-deletion
-        await query.message.reply_photo(
+        # Send whale image and delete after a short delay
+        image_msg = await query.message.reply_photo(
             photo=open(whale_image_path, "rb"), caption="🐳 Whale Alerts Activated! 🚀"
         )
+        await whale_alerts_command(update, context)
+        time.sleep(3)
+        try:
+            await context.bot.delete_message(
+                chat_id=user_id, message_id=image_msg.message_id
+            )
+        except Exception as e:
+            logger.warning(f"Failed to delete whale alert image: {e}")
+        return
 
     # Update the main menu
     await whale_alerts_command(update, context)
@@ -114,7 +124,9 @@ async def check_highest_whale_tx(update: Update, context: Application) -> None:
     )
 
     try:
-        data = fetch_whale_transactions()  # Assumes this fetches recent large transfers
+        data = fetch_whale_transactions(
+            min_amount_usd=50000
+        )  # Set default threshold to 50,000
         transactions = data.get("transfers", [])
 
         if not transactions:

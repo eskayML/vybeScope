@@ -5,8 +5,18 @@
       "HzsMcybwTDDEdAboNLo9TWT37s8WWuqjcdMGkQxbDuDn"
     ],
     "whale_alert": {
-      "threshold": null,
+      "threshold": 500000.0,
       "enabled": true
+    }
+  },
+  "1538721263": {
+    "wallets": [
+      "J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah",
+      "4vuwSTqzrnbrtrdjEzz3XDTYgumVsSfHZVeWF82VqRiX"
+    ],
+    "whale_alert": {
+      "threshold": null,
+      "enabled": false
     }
   }
 }

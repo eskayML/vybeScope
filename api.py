@@ -13,7 +13,7 @@ HEADERS = {"accept": "application/json", "x-api-key": os.getenv("VYBE_API_KEY")}
 
 def fetch_whale_transactions(min_amount_usd=50000, limit=2):
     """Fetch whale transactions from Vybe API."""
-    url = f"{BASE_URL}/token/transfers?min_amount_usd={min_amount_usd}&limit={limit}"
+    url = f"{BASE_URL}/token/transfers?minAmount={min_amount_usd}"
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
     return response.json()
@@ -48,15 +48,15 @@ def get_wallet_token_balance(owner_address):
 
 
 if __name__ == "__main__":
-    balance = get_wallet_token_balance("2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy")
-    print(balance)
+    # balance = get_wallet_token_balance("2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy")
+    # print(balance)
     
     # activity = fetch_wallet_activity("HzsMcybwTDDEdAboNLo9TWT37s8WWuqjcdMGkQxbDuDn")
     # print(activity)
 
 
-    # transactions = fetch_whale_transactions()
-    # print( transactions)
+    transactions = fetch_whale_transactions()
+    print(transactions)
 
 
     # token_stats = fetch_token_stats("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")

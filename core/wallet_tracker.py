@@ -1,6 +1,7 @@
 import logging
 import re
 import time
+
 import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application
@@ -70,21 +71,18 @@ async def process_wallet(
         )
         return
 
-    # Send image before fetching balances
-    image_path = "assets/pepe_sniper.jpg"
+    # Send image with caption before fetching balances
+    image_path = "assets/wallet_tracking_pepe.jpg"
     image_msg = None
     try:
         image_msg = await context.bot.send_photo(
             chat_id=user_id,
             photo=image_path,
+            caption=f"⏳ Finding token balances for wallet `{wallet_address[:6]}...`",
         )
     except Exception as e:
         logger.warning(f"Failed to send image: {e}")
 
-    await context.bot.send_message(
-        chat_id=user_id,
-        text=f"⏳ Finding token balances for wallet `{wallet_address[:6]}...`",
-    )
     try:
         # Call the balance function
         balance_data = get_wallet_token_balance(wallet_address)

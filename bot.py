@@ -189,56 +189,66 @@ async def check_command(update: Update, context: Application) -> None:
 
 async def dashboard_command(update: Update, context: Application) -> None:
     """Shows the user's dashboard: tracked wallets and whale alert settings."""
-    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action=ChatAction.TYPING)
+    await context.bot.send_chat_action(
+        chat_id=update.effective_chat.id, action=ChatAction.TYPING
+    )
     user_id = update.effective_user.id
     dashboard = get_user_dashboard(user_id)
-    wallets = dashboard.get('wallets', [])
-    threshold = dashboard.get('whale_alert', {}).get('threshold')
+    wallets = dashboard.get("wallets", [])
+    threshold = dashboard.get("whale_alert", {}).get("threshold")
     is_empty = not wallets and not threshold
 
     # Build the message
     if is_empty:
-        msg = '📊 *Your Dashboard is Empty!*\n\n'
-        msg += 'Add a wallet or set a whale alert threshold to get started.'
+        msg = "📊 *Your Dashboard is Empty!*\n\n"
+        msg += "Add a wallet or set a whale alert threshold to get started."
         keyboard = [
-            [InlineKeyboardButton('Add Wallet', callback_data='dashboard_add_wallet')],
-            [InlineKeyboardButton('Set Whale Threshold', callback_data='dashboard_set_threshold')],
-            [InlineKeyboardButton('Back to Main Menu 🔙', callback_data='start')]
+            [InlineKeyboardButton("Add Wallet", callback_data="dashboard_add_wallet")],
+            [
+                InlineKeyboardButton(
+                    "Set Whale Threshold", callback_data="dashboard_set_threshold"
+                )
+            ],
+            [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
         ]
     else:
-        msg = '📊 *Your Dashboard*\n\n'
-        msg += '💼 *Tracked Wallets:*\n'
+        msg = "📊 *Your Dashboard*\n\n"
+        msg += "💼 *Tracked Wallets:*\n"
         if wallets:
             for w in wallets:
-                msg += f'`{w}`\n'
+                msg += f"`{w}`\n"
         else:
-            msg += '_None yet. Add one from Wallet Tracker!_\n'
-        msg += '\n🐋 *Whale Alert Threshold:* '
-        msg += f'${threshold:,.2f}' if threshold else '_Not set_'
-        msg += '\n\nUse the buttons below to manage your dashboard.'
+            msg += "_None yet. Add one from Wallet Tracker!_\n"
+        msg += "\n🐋 *Whale Alert Threshold:* "
+        msg += f"${threshold:,.2f}" if threshold else "_Not set_"
+        msg += "\n\nUse the buttons below to manage your dashboard."
         keyboard = [
-            [InlineKeyboardButton('Add Wallet', callback_data='dashboard_add_wallet')],
-            [InlineKeyboardButton('Remove Wallet', callback_data='dashboard_remove_wallet')],
-            [InlineKeyboardButton('Set Whale Threshold', callback_data='dashboard_set_threshold')],
-            [InlineKeyboardButton('Back to Main Menu 🔙', callback_data='start')]
+            [InlineKeyboardButton("Add Wallet", callback_data="dashboard_add_wallet")],
+            [
+                InlineKeyboardButton(
+                    "Remove Wallet", callback_data="dashboard_remove_wallet"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    "Set Whale Threshold", callback_data="dashboard_set_threshold"
+                )
+            ],
+            [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
         ]
-    
+
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     try:
         if update.callback_query:
             # Edit existing message if it's from a button press
             await update.callback_query.message.edit_text(
-                text=msg,
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
+                text=msg, reply_markup=reply_markup, parse_mode="Markdown"
             )
         else:
             # Send new message if it's from a direct command
             await update.message.reply_text(
-                text=msg,
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
+                text=msg, reply_markup=reply_markup, parse_mode="Markdown"
             )
     except Exception as e:
         logger.error(f"Error in dashboard_command: {e}")
@@ -247,7 +257,7 @@ async def dashboard_command(update: Update, context: Application) -> None:
             chat_id=update.effective_chat.id,
             text=msg,
             reply_markup=reply_markup,
-            parse_mode='Markdown'
+            parse_mode="Markdown",
         )
 
 

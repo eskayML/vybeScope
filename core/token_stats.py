@@ -17,7 +17,6 @@ TOKEN_ADDRESS_MAP = {
     "USDT": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB", # Tether USD
     "BONK": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", # Bonk
     "WIF": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",  # dogwifhat
-    "JUP": "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNs997f",  # Jupiter
     "PYTH": "HZ1JovNiVvGrGNiiYvEozEVgZ58xaU3RKwX8eACQBCt3", # Pyth Network
     "JTO": "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL",  # Jito
     "RNDR": "rndrizKT3MK1iimdxRdWabcF7Zg7AR5T4nud4EkHBof",  # Render Token (SPL)

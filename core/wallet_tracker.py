@@ -137,7 +137,8 @@ async def process_wallet(
             return
 
         # --- Build the Message ---
-        message_text = f"💼 *Wallet:* `{wallet_address}`\n\n"
+        message_text = "✅ Successfully Started Tracking!\n"
+        message_text += f"💼 *Wallet:* `{wallet_address}`\n\n"
         message_text += f"💰 *Total Value:* ${total_value_usd:,.2f} USD\n"
         if total_value_change_formatted:
             message_text += f"📊 *Change (24h):* {total_value_change_formatted}\n"

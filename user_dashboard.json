@@ -1,16 +1,4 @@
 {
-  "6423826292": {
-    "wallets": [
-      "2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy",
-      "HzsMcybwTDDEdAboNLo9TWT37s8WWuqjcdMGkQxbDuDn",
-      "4vuwSTqzrnbrtrdjEzz3XDTYgumVsSfHZVeWF82VqRiX",
-      "J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah"
-    ],
-    "whale_alert": {
-      "threshold": 500000.0,
-      "enabled": true
-    }
-  },
   "1538721263": {
     "wallets": [
       "J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah",
@@ -19,6 +7,14 @@
     "whale_alert": {
       "threshold": null,
       "enabled": false
+    }
+  },
+  "6423826292": {
+    "wallets": [],
+    "whale_alert": {
+      "threshold": null,
+      "enabled": true,
+      "last_alerted_signature": null
     }
   }
 }

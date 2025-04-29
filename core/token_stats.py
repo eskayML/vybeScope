@@ -45,7 +45,7 @@ async def token_prompt(update: Update, context: Application, user_states: dict) 
     user_id = user.id
     await context.bot.send_chat_action(chat_id=user_id, action=ChatAction.TYPING)
     await message.reply_text(
-        "📈 Enter a token symbol (e.g. WIF, PYTH, JTO, TRUMP) or the full contract address to check its stats:"
+        "📈 Enter a token symbol (e.g. WIF, PYTH, JTO, BONK, TRUMP) or the full contract address to check its stats:"
     )
     user_states[user_id] = "awaiting_token"
 
@@ -112,7 +112,7 @@ async def process_token(user_id: int, token_input: str, context: Application) ->
             reply_markup = InlineKeyboardMarkup(keyboard)
             await context.bot.send_message(
                 chat_id=user_id,
-                text=f"❌ Unknown token symbol: {token_symbol}. Please provide a known symbol (e.g. WIF ,PYTH, JTO, TRUMP) or the full contract address.",
+                text=f"❌ Unknown token symbol: {token_symbol}. Please provide a known symbol (e.g. WIF ,PYTH, JTO, BONK, TRUMP) or the full contract address.",
                 reply_markup=reply_markup,
             )
             return
@@ -192,16 +192,12 @@ async def process_token(user_id: int, token_input: str, context: Application) ->
                 return default
 
         # --- Updated Formatting ---
-        price_str = (
-            f"${format_num(price, precision=4)}"  # Show more precision for price
-        )
+        # Dynamically set price precision: 8 decimals if < 0.01, else 4
+        price_precision = 8 if price is not None and abs(float(price)) < 0.01 else 4
+        price_str = f"${format_num(price, precision=price_precision)}"  # Dynamic precision for price
         volume_str = f"${format_num(volume_24h)}"
         mc_str = f"${format_num(market_cap)}"
-        address_display = (
-            f"{fetched_address[:6]}...{fetched_address[-4:]}"
-            if fetched_address
-            else "N/A"
-        )
+        address_display = f"{fetched_address}" if fetched_address else "N/A"
         explorer_url = (
             f"https://vybe.fyi/tokens/{fetched_address}" if fetched_address else None
         )

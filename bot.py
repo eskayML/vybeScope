@@ -6,9 +6,11 @@ from decimal import Decimal, InvalidOperation
 import pytz
 import requests
 import telegram
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ChatAction
+from telegram.error import BadRequest
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -20,6 +22,8 @@ from telegram.request import HTTPXRequest
 
 from api import fetch_token_stats, fetch_wallet_activity, fetch_whale_transactions
 from core.dashboard import (
+    _load_dashboard,
+    _save_dashboard,
     add_tracked_wallet,
     get_user_dashboard,
     get_whale_alert_threshold,
@@ -34,15 +38,11 @@ from core.wallet_tracker import (
 )
 
 # Import core functionalities
-from core.whale_alerts import (
-    check_highest_whale_tx,
-    get_whale_alerts_enabled,
-    toggle_whale_alerts,
-    whale_alerts_command,
-)
+from core.whale_alerts import check_highest_whale_tx, get_whale_alerts_enabled
 from core.whale_alerts import (
     set_threshold_prompt as core_set_threshold_prompt,  # Rename to avoid clash
 )
+from core.whale_alerts import toggle_whale_alerts, whale_alerts_command
 
 # Load environment variables from .env file
 load_dotenv()
@@ -552,6 +552,60 @@ async def error_handler(update: object, context: Application) -> None:
             logger.error(f"Failed to send error message to user {chat_id}: {e}")
 
 
+# --- Scheduled Whale Alert Job ---
+
+
+async def whale_alert_job(application: Application):
+    """Checks whale transactions for all users with alerts enabled and sends notifications."""
+    dashboard = _load_dashboard()
+    for user_id, user_data in dashboard.items():
+        whale_alert = user_data.get("whale_alert", {})
+        if whale_alert.get("enabled"):
+            try:
+                # Fetch the latest whale transaction
+                data = fetch_whale_transactions(
+                    min_amount_usd=whale_alert.get("threshold", 50000)
+                )
+                transactions = data.get("transfers", [])
+                if not transactions:
+                    continue
+                # Find the highest value transaction
+                highest_tx = max(
+                    transactions, key=lambda tx: float(tx.get("valueUsd", 0))
+                )
+                tx_signature = highest_tx.get("signature")
+                # Only alert if this is a new transaction
+                if tx_signature and tx_signature != whale_alert.get(
+                    "last_alerted_signature"
+                ):
+                    # Send alert
+                    class DummyQuery:
+                        message = type(
+                            "msg", (), {"reply_text": lambda *a, **k: None}
+                        )()
+
+                        async def answer(self):
+                            pass
+
+                    class DummyUpdate:
+                        callback_query = DummyQuery()
+                        effective_user = type("user", (), {"id": int(user_id)})()
+
+                    class DummyContext:
+                        bot = application.bot
+
+                    await check_highest_whale_tx(DummyUpdate(), DummyContext())
+                    # Update last alerted signature
+                    dashboard[user_id]["whale_alert"]["last_alerted_signature"] = (
+                        tx_signature
+                    )
+                    _save_dashboard(dashboard)
+            except BadRequest as e:
+                logger.warning(f"Failed to send whale alert to user {user_id}: {e}")
+            except Exception as e:
+                logger.error(f"Error in whale alert job for user {user_id}: {e}")
+
+
 # --- Main Function ---
 
 
@@ -592,9 +646,15 @@ def main() -> None:
     # Error handler
     application.add_error_handler(error_handler)
 
+    # --- Scheduler for Whale Alerts ---
+    scheduler = AsyncIOScheduler()
+    scheduler.add_job(lambda: whale_alert_job(application), "interval", minutes=10)
+    scheduler.start()
+
     logger.info("Starting bot polling...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
 if __name__ == "__main__":
+    main()
     main()

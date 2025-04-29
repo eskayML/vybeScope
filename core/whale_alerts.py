@@ -170,9 +170,7 @@ async def check_highest_whale_tx(update: Update, context: Application) -> None:
             response_text = format_transaction_details(highest_tx)
             # Remove the header from the helper function's output for this specific context
             response_text = "\n".join(response_text.split("\n")[2:])
-            response_text = (
-                f"🐋 *Highest Whale Transaction Alert* 🚨\n\n{response_text}"
-            )
+            response_text = f"🐋 *Most Recent Whale Transaction* 🚨\n\n{response_text}"
 
             keyboard = [
                 [

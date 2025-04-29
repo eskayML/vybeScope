@@ -2,7 +2,6 @@ import asyncio
 import os
 
 from dotenv import load_dotenv
-from openai import OpenAI
 from telegram import (
     InlineKeyboardButton,
     InlineKeyboardMarkup,
@@ -71,40 +70,3 @@ async def research_agent_handler(update: Update, context: CallbackContext):
         await update.callback_query.answer("Opening Research Agent Mini App...")
 
 
-async def handle_research_query(update: Update, context: CallbackContext):
-    user_id = update.effective_user.id
-    if not user_research_agent_state.get(user_id, False):
-        return
-    question = update.message.text
-    response = await query_openai(question)
-    await update.message.reply_text(response)
-    # Optionally, you can keep the toggle button visible
-    # await send_toggle_button(update, context, True)
-
-
-async def query_openai(question: str) -> str:
-    """Query OpenAI with the given question and return the response using gpt-4o model."""
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return "Error: OPENAI_API_KEY not set."
-    try:
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": question},
-            ],
-            max_tokens=100,
-            temperature=0.5,
-        )
-
-        answer = response.choices[0].message.content.strip()
-
-        print("---AGENT RESPONSE ---")
-        print(answer)
-
-        return answer
-
-    except Exception as e:
-        return f"Error: {e}"

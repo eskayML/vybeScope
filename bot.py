@@ -31,8 +31,6 @@ from core.dashboard import (
 
 # --- Research Agent Integration ---
 from core.research_agent import (
-    handle_research_query,
-    query_openai,
     research_agent_handler,
     send_research_agent_miniapp_button,
 )

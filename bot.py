@@ -31,8 +31,9 @@ from core.dashboard import (
 # --- Research Agent Integration ---
 from core.research_agent import (
     handle_research_query,
+    query_openai,
     research_agent_handler,
-    toggle_research_agent_callback,
+    send_research_agent_miniapp_button,
 )
 from core.token_stats import process_token, show_top_holders
 from core.token_stats import token_prompt as core_token_prompt  # Rename to avoid clash
@@ -324,6 +325,11 @@ async def handle_text(update: Update, context: Application) -> None:
 
     user_id = update.effective_user.id
     text = update.message.text.strip()
+
+    # --- Research Agent /agent command integration ---
+    if text.startswith("/agent"):
+        await send_research_agent_miniapp_button(update, context)
+        return
 
     if user_id not in user_states:
         await update.message.reply_text(
@@ -740,18 +746,8 @@ def main() -> None:
     application.add_handler(
         CallbackQueryHandler(research_agent_handler, pattern="^research_agent$")
     )
-    # Research Agent toggler button handler
-    application.add_handler(
-        CallbackQueryHandler(
-            toggle_research_agent_callback, pattern="^toggle_research_agent$"
-        )
-    )
     # Callback query handler (button presses, generic - must come after specific handlers)
     application.add_handler(CallbackQueryHandler(button_handler))
-    # Research Agent message handler (only if agent is on)
-    application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_research_query)
-    )
 
     # Error handler
     application.add_error_handler(error_handler)

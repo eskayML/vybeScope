@@ -27,6 +27,13 @@ from core.dashboard import (
     remove_tracked_wallet,
     set_whale_alert_threshold,
 )
+
+# --- Research Agent Integration ---
+from core.research_agent import (
+    handle_research_query,
+    research_agent_handler,
+    toggle_research_agent_callback,
+)
 from core.token_stats import process_token, show_top_holders
 from core.token_stats import token_prompt as core_token_prompt  # Rename to avoid clash
 from core.wallet_tracker import process_wallet
@@ -35,11 +42,15 @@ from core.wallet_tracker import (
 )
 
 # Import core functionalities
-from core.whale_alerts import check_highest_whale_tx, get_whale_alerts_enabled
+from core.whale_alerts import (
+    check_highest_whale_tx,
+    get_whale_alerts_enabled,
+    toggle_whale_alerts,
+    whale_alerts_command,
+)
 from core.whale_alerts import (
     set_threshold_prompt as core_set_threshold_prompt,  # Rename to avoid clash
 )
-from core.whale_alerts import toggle_whale_alerts, whale_alerts_command
 
 # Load environment variables from .env file
 load_dotenv()
@@ -500,6 +511,34 @@ async def button_handler(update: Update, context: Application) -> None:
                 "Dashboard was already empty.", parse_mode="Markdown"
             )
         await dashboard_command(update, context)
+    elif callback_data == "quick_commands":
+        quick_commands_msg = (
+            "*Quick Commands & Features*\n\n"
+            "• /start – Start or restart the Vybe Bot and see the main menu.\n"
+            "• /threshold – Set or view your whale alert threshold.\n"
+            "• /token <token_address> – Get stats and info for a specific token.\n"
+            "• /wallet <wallet_address> – Track or view activity for a wallet.\n"
+            "• /whalealerts – Manage whale alert notifications and settings.\n"
+            "• /check – Instantly check the highest whale transaction.\n"
+            "• /dashboard – View your personal dashboard and tracked data.\n\n"
+            "*Other Features:*\n"
+            "• Use the interactive buttons in the chat for quick actions (toggle alerts, set thresholds, etc).\n"
+            "• Send a wallet or token address directly to get instant info.\n"
+            "• The bot responds to plain text queries for supported operations.\n"
+        )
+        close_markup = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("Close ❌", callback_data="close_quick_commands")]]
+        )
+        await query.message.reply_text(
+            quick_commands_msg, parse_mode="Markdown", reply_markup=close_markup
+        )
+        return
+    elif callback_data == "close_quick_commands":
+        try:
+            await query.message.delete()
+        except Exception as e:
+            logger.warning(f"Failed to delete quick commands message: {e}")
+        return
     elif callback_data.startswith("show_top_holders_"):
         token_address = callback_data.replace("show_top_holders_", "")
         await show_top_holders(user_id, token_address, context)
@@ -635,12 +674,12 @@ async def whale_alert_job(application: Application):
                 highest_tx = max(
                     transactions, key=lambda tx: float(tx.get("valueUsd", 0))
                 )
-                tx_signature = highest_tx.get("signature")
-                # Only alert if this is a new transaction
-                if tx_signature and tx_signature != whale_alert.get(
-                    "last_alerted_signature"
-                ):
-                    # Send alert
+                # Only alert if the transaction is within the last 11 minutes
+                import time
+
+                block_time = highest_tx.get("blockTime")
+                if block_time and (time.time() - int(block_time)) <= 11 * 60:
+
                     class DummyQuery:
                         message = type(
                             "msg", (), {"reply_text": lambda *a, **k: None}
@@ -657,11 +696,6 @@ async def whale_alert_job(application: Application):
                         bot = application.bot
 
                     await check_highest_whale_tx(DummyUpdate(), DummyContext())
-                    # Update last alerted signature
-                    dashboard[user_id]["whale_alert"]["last_alerted_signature"] = (
-                        tx_signature
-                    )
-                    _save_dashboard(dashboard)
             except BadRequest as e:
                 logger.warning(f"Failed to send whale alert to user {user_id}: {e}")
             except Exception as e:
@@ -702,8 +736,22 @@ def main() -> None:
         MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text)
     )
 
-    # Callback query handler (button presses)
+    # Research Agent button handler (must come before generic button_handler)
+    application.add_handler(
+        CallbackQueryHandler(research_agent_handler, pattern="^research_agent$")
+    )
+    # Research Agent toggler button handler
+    application.add_handler(
+        CallbackQueryHandler(
+            toggle_research_agent_callback, pattern="^toggle_research_agent$"
+        )
+    )
+    # Callback query handler (button presses, generic - must come after specific handlers)
     application.add_handler(CallbackQueryHandler(button_handler))
+    # Research Agent message handler (only if agent is on)
+    application.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_research_query)
+    )
 
     # Error handler
     application.add_error_handler(error_handler)

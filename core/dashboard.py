@@ -31,7 +31,6 @@ def get_user_dashboard(user_id):
             "whale_alert": {
                 "threshold": None,
                 "enabled": False,
-                "last_alerted_signature": None,
             },
         },
     )
@@ -46,7 +45,6 @@ def add_tracked_wallet(user_id, wallet_address):
             "whale_alert": {
                 "threshold": None,
                 "enabled": False,
-                "last_alerted_signature": None,
             },
         },
     )
@@ -66,7 +64,6 @@ def remove_tracked_wallet(user_id, wallet_address):
             "whale_alert": {
                 "threshold": None,
                 "enabled": False,
-                "last_alerted_signature": None,
             },
         },
     )
@@ -86,7 +83,6 @@ def set_whale_alert_threshold(user_id, threshold):
             "whale_alert": {
                 "threshold": None,
                 "enabled": False,
-                "last_alerted_signature": None,
             },
         },
     )
@@ -103,7 +99,6 @@ def get_whale_alert_threshold(user_id):
             "whale_alert": {
                 "threshold": None,
                 "enabled": False,
-                "last_alerted_signature": None,
             },
         },
     )
@@ -119,7 +114,6 @@ def set_whale_alerts_enabled(user_id, enabled):
             "whale_alert": {
                 "threshold": None,
                 "enabled": False,
-                "last_alerted_signature": None,
             },
         },
     )
@@ -136,7 +130,6 @@ def get_whale_alerts_enabled(user_id):
             "whale_alert": {
                 "threshold": None,
                 "enabled": False,
-                "last_alerted_signature": None,
             },
         },
     )

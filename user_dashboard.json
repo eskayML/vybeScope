@@ -15,7 +15,7 @@
     ],
     "whale_alert": {
       "threshold": null,
-      "enabled": false,
+      "enabled": true,
       "last_alerted_signature": null
     }
   }

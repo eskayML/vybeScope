@@ -141,3 +141,13 @@ def get_whale_alerts_enabled(user_id):
         },
     )
     return user["whale_alert"].get("enabled", False)
+
+
+def clear_user_dashboard(user_id):
+    """Remove all dashboard data for a user."""
+    data = _load_dashboard()
+    if str(user_id) in data:
+        del data[str(user_id)]
+        _save_dashboard(data)
+        return True
+    return False

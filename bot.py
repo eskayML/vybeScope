@@ -1,9 +1,6 @@
 import logging
 import os
-import re
-from decimal import Decimal, InvalidOperation
 
-import pytz
 import requests
 import telegram
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -20,13 +17,13 @@ from telegram.ext import (
 )
 from telegram.request import HTTPXRequest
 
-from api import fetch_token_stats, fetch_wallet_activity, fetch_whale_transactions
+from api import fetch_whale_transactions
 from core.dashboard import (
     _load_dashboard,
     _save_dashboard,
     add_tracked_wallet,
+    clear_user_dashboard,
     get_user_dashboard,
-    get_whale_alert_threshold,
     remove_tracked_wallet,
     set_whale_alert_threshold,
 )
@@ -239,6 +236,11 @@ async def dashboard_command(update: Update, context: Application) -> None:
                 ),
                 InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
             ],
+            [
+                InlineKeyboardButton(
+                    "🗑️ Clear Dashboard", callback_data="dashboard_clear"
+                ),
+            ],
         ]
     else:
         msg = "📊 *Your Dashboard*\n\n"
@@ -266,6 +268,11 @@ async def dashboard_command(update: Update, context: Application) -> None:
                     "Set Whale Threshold ⚙", callback_data="dashboard_set_threshold"
                 ),
                 InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
+            ],
+            [
+                InlineKeyboardButton(
+                    "🗑️ Clear Dashboard", callback_data="dashboard_clear"
+                ),
             ],
         ]
 
@@ -482,6 +489,17 @@ async def button_handler(update: Update, context: Application) -> None:
     elif callback_data == "dashboard_set_threshold":
         user_states[user_id] = "dashboard_awaiting_set_threshold"
         await query.message.reply_text("🐋 Enter the new whale alert threshold (USD):")
+    elif callback_data == "dashboard_clear":
+        cleared = clear_user_dashboard(user_id)
+        if cleared:
+            await query.message.reply_text(
+                "🗑️ Dashboard cleared!", parse_mode="Markdown"
+            )
+        else:
+            await query.message.reply_text(
+                "Dashboard was already empty.", parse_mode="Markdown"
+            )
+        await dashboard_command(update, context)
     elif callback_data.startswith("show_top_holders_"):
         token_address = callback_data.replace("show_top_holders_", "")
         await show_top_holders(user_id, token_address, context)
@@ -657,4 +675,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-    main()
+

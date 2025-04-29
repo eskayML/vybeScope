@@ -13,7 +13,7 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
 
 <table>
   <tr>
-    <td><img src="" alt="Wallet Tracking Example" width="250"/></td>
+    <td><img src="https://gcdnb.pbrd.co/images/SK9FrCWxL3Vv.gif" alt="Wallet Tracking Example" width="250"/></td>
     <!-- <td><img src="assets/ui2.gif" alt="UI Example 2" width="250"/></td>
     <td><img src="assets/ui3.gif" alt="UI Example 3" width="250"/></td> -->
   </tr>

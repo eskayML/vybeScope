@@ -414,10 +414,10 @@ async def handle_text(update: Update, context: Application) -> None:
         await process_wallet(user_id, text, context)
 
     elif state == "dashboard_awaiting_add_wallet":
-        # Add wallet to the user's dashboard
-        add_tracked_wallet(user_id, text)
-        await update.message.reply_text(f"✅ Wallet `{text}` added to your dashboard!")
-        await dashboard_command(update, context)
+        # Use the full wallet tracker handler for adding a wallet from the dashboard
+        await process_wallet(user_id, text, context)
+        # Optionally, you may want to show the dashboard again after processing
+        # await dashboard_command(update, context)
 
     elif state == "dashboard_awaiting_remove_wallet":
         # Remove wallet from the user's dashboard

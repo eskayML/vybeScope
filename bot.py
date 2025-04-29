@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 
@@ -5,7 +6,7 @@ import requests
 import telegram
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ChatAction
 from telegram.error import BadRequest
 from telegram.ext import (
@@ -104,9 +105,10 @@ async def start(update: Update, context: Application) -> None:
         ],
         [
             InlineKeyboardButton("Quick Commands ⚡", callback_data="quick_commands"),
-            InlineKeyboardButton("Research Agent 🤖", callback_data="research_agent"),
+            InlineKeyboardButton("🆕Research Agent 🤖", callback_data="research_agent"),
         ],
     ]
+
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     # Clear any previous state for the user
@@ -526,7 +528,8 @@ async def button_handler(update: Update, context: Application) -> None:
             "• /wallet <wallet_address> – Track or view activity for a wallet.\n"
             "• /whalealerts – Manage whale alert notifications and settings.\n"
             "• /check – Instantly check the highest whale transaction.\n"
-            "• /dashboard – View your personal dashboard and tracked data.\n\n"
+            "• /dashboard – View your personal dashboard and tracked data.\n"
+            "• /agent – Open the Research Agent mini app.\n\n"
             "*Other Features:*\n"
             "• Use the interactive buttons in the chat for quick actions (toggle alerts, set thresholds, etc).\n"
             "• Send a wallet or token address directly to get instant info.\n"
@@ -722,6 +725,23 @@ def main() -> None:
         connect_timeout=30.0,
     )
     application = Application.builder().token(TELEGRAM_TOKEN).request(request).build()
+
+    # --- Register Bot Commands for Menu Bar ---
+
+    async def set_bot_commands():
+        commands = [
+            BotCommand("start", "Show main menu and restart the bot"),
+            BotCommand("dashboard", "View your dashboard and tracked wallets"),
+            BotCommand("wallet", "Track or view a wallet's activity"),
+            BotCommand("token", "Get stats for a Solana token"),
+            BotCommand("whalealerts", "Manage whale alert notifications"),
+            BotCommand("threshold", "Set your whale alert threshold"),
+            BotCommand("check", "Check the highest whale transaction now"),
+            BotCommand("agent", "Open the Research Agent mini app"),
+        ]
+        await application.bot.set_my_commands(commands)
+
+    asyncio.get_event_loop().run_until_complete(set_bot_commands())
 
     # --- Register Handlers ---
     # Core commands

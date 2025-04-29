@@ -510,6 +510,50 @@ async def button_handler(update: Update, context: Application) -> None:
         except Exception as e:
             logger.warning(f"Failed to delete top holders message: {e}")
         return
+    elif callback_data.startswith("show_recent_tx_"):
+        wallet_address = callback_data.replace("show_recent_tx_", "")
+        from api import fetch_wallet_activity
+
+        try:
+            txs = fetch_wallet_activity(wallet_address)
+            if not txs:
+                await query.message.reply_text(
+                    "No recent transactions found for this wallet."
+                )
+                return
+            msg = f"🕒 Top 5 Most Recent Transactions for\n`{wallet_address}`\n\n"
+            for tx in txs[:5]:
+                sig = tx.get("signature", "N/A")
+                amt = tx.get("amount", "N/A")
+                token = tx.get("tokenSymbol", "")
+                val = tx.get("valueUsd", "N/A")
+                ttype = tx.get("type", "N/A")
+                time_ = tx.get("blockTime", "N/A")
+                msg += (
+                    f"•✔ {amt} {token} (${val})\nSignature: `{sig}`\nTime: {time_}\n\n"
+                )
+            # Add Back to Token Info button
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        "Back to Token Info",
+                        callback_data=f"recent_tx_back_{wallet_address}",
+                    )
+                ]
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.message.reply_text(
+                msg, parse_mode="Markdown", reply_markup=reply_markup
+            )
+        except Exception as e:
+            await query.message.reply_text(f"Error fetching transactions: {e}")
+    elif callback_data.startswith("recent_tx_back_"):
+        # Only delete the recent tx message, do not show token info again
+        try:
+            await query.message.delete()
+        except Exception as e:
+            logger.warning(f"Failed to delete recent tx message: {e}")
+        return
     else:
         logger.info(f"Received unhandled callback_data: {callback_data}")
         # Optionally send a message if the callback is unknown
@@ -675,4 +719,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

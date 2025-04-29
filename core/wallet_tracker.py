@@ -242,6 +242,12 @@ async def process_wallet(
         keyboard = [
             [
                 InlineKeyboardButton(
+                    "Show Recent Transactions",
+                    callback_data=f"show_recent_tx_{wallet_address}",
+                )
+            ],
+            [
+                InlineKeyboardButton(
                     "Track Another Wallet 🔍", callback_data="wallet_tracker"
                 )
             ],

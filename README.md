@@ -13,18 +13,18 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
 
 ## User Interface
 
-<table>
-   <tr>
-      <th>Token Information</th>
-      <th>Wallet Tracking</th>
-      <th>Whale Alerts</th>
-      <th>Research Mini App</th>
+<table style="border-collapse: collapse; border: none; text-align: center; width: 100%;">
+   <tr style="border: none; font-weight: bold;">
+      <td style="border: none;">Token Information</td>
+      <td style="border: none;">Wallet Tracking</td>
+      <td style="border: none;">Whale Alerts</td>
+      <!-- <td style="border: none;">Research Mini App</td> -->
    </tr>
-   <tr>
-      <td><img src="https://gcdnb.pbrd.co/images/BfKwMnzydfSI.gif" alt="Token Information Example" width="250"/></td>
-      <td><img src="https://gcdnb.pbrd.co/images/SK9FrCWxL3Vv.gif" alt="Wallet Tracking Example" width="250"/></td>
-      <td><img src="https://gcdnb.pbrd.co/images/Ex0lkuqCEHz3.gif" alt="Whale Alerts Sample" width="250"/></td>
-      <td><img src="https://gcdnb.pbrd.co/images/OVFVpoaVefRb.gif?o=1" alt="Research Mini App" width="250"/></td>
+   <tr style="border: none;">
+      <td style="border: none;"><img src="https://gcdnb.pbrd.co/images/BfKwMnzydfSI.gif" alt="Token Information Example" width="250"/></td>
+      <td style="border: none;"><img src="https://gcdnb.pbrd.co/images/ThS1Oc8EBjFG.gif" alt="Wallet Tracking Example" width="250"/></td>
+      <td style="border: none;"><img src="https://gcdnb.pbrd.co/images/Ex0lkuqCEHz3.gif" alt="Whale Alerts Sample" width="250"/></td>
+      <!-- <td style="border: none;"><img src="https://gcdnb.pbrd.co/images/OVFVpoaVefRb.gif?o=1" alt="Research Mini App" width="250"/></td> -->
    </tr>
 </table>
 

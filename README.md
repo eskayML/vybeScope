@@ -14,11 +14,18 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
 ## User Interface
 
 <table>
-  <tr>
-    <td><img src="https://gcdnb.pbrd.co/images/SK9FrCWxL3Vv.gif" alt="Wallet Tracking Example" width="250"/></td>
-    <!-- <td><img src="assets/ui2.gif" alt="UI Example 2" width="250"/></td>
-    <td><img src="assets/ui3.gif" alt="UI Example 3" width="250"/></td> -->
-  </tr>
+   <tr>
+      <th>Token Information</th>
+      <th>Wallet Tracking</th>
+      <th>Whale Alerts</th>
+      <th>Research Mini App</th>
+   </tr>
+   <tr>
+      <td><img src="https://gcdnb.pbrd.co/images/BfKwMnzydfSI.gif" alt="Token Information Example" width="250"/></td>
+      <td><img src="https://gcdnb.pbrd.co/images/SK9FrCWxL3Vv.gif" alt="Wallet Tracking Example" width="250"/></td>
+      <td><img src="https://gcdnb.pbrd.co/images/Ex0lkuqCEHz3.gif" alt="Whale Alerts Sample" width="250"/></td>
+      <td><img src="https://gcdnb.pbrd.co/images/OVFVpoaVefRb.gif?o=1" alt="Research Mini App" width="250"/></td>
+   </tr>
 </table>
 
 

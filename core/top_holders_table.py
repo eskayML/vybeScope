@@ -16,9 +16,10 @@ def format_top_holders_text(top_holders):
         balance = f"{float(holder.get('balance', 0)):.2f}"
         value_usd = f"${float(holder.get('valueUsd', 0)):,.2f}"
         percent = f"{float(holder.get('percentageOfSupplyHeld', 0)):.4f}%"
+        symbol = holder.get("tokenSymbol", "-")
         line = (
             f"<b>#{rank}</b> 👤 <b>Owner:</b> {owner}\n"
-            f"   💰 <b>Balance:</b> {balance}\n"
+            f"   💰 <b>Balance:</b> {balance} <b>{symbol}</b> \n"
             f"   💵 <b>Value:</b> {value_usd}\n"
             f"   📊 <b>Supply:</b> {percent}\n"
         )

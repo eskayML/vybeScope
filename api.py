@@ -74,14 +74,17 @@ def fetch_top_token_holders(mint_address, count=5):
 
 
 if __name__ == "__main__":
+    
+    
     # balance = get_wallet_token_balance("2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy")
     # print(balance)
     
-    activity = fetch_wallet_activity("J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah")
-    print(activity)
+    # print("WALLET ACTIVITY")
+    # activity = fetch_wallet_activity("J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah")
+    # print(activity)
 
-    # top_holders = fetch_top_token_holders("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
-    # print(top_holders)
+    top_holders = fetch_top_token_holders("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
+    print(top_holders)
 
     # transactions = fetch_whale_transactions()
     # print(transactions)

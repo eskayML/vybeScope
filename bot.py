@@ -63,7 +63,8 @@ class VybeScopeBot:
         self.user_states = {}
         self.logger = logging.getLogger(__name__)
         logging.basicConfig(
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            level=logging.INFO,
         )
         self.application = None
         self.scheduler = None
@@ -75,10 +76,10 @@ class VybeScopeBot:
         )
         user = update.effective_user.first_name
         welcome_message = (
-            f"🚀Welcome to VybeScope🔭, *{user}*! \n"
-            "Perform Actions that directly interact with the Vybe API \n"
-            "Track whale alerts, token stats, and wallet activity.\n\n"
-            "Choose an action below to get started! 👇"
+            f"🚀 Welcome to VybeScope🔭, *{user}*! \n\n"
+            "Explore powerful tools to track whale alerts, analyze token statistics, "
+            "and monitor wallet activity seamlessly.\n\n"
+            "Select an option below to begin your journey! 👇"
         )
 
         # Main menu keyboard
@@ -86,14 +87,22 @@ class VybeScopeBot:
             [InlineKeyboardButton("Dashboard 📊", callback_data="dashboard")],
             [
                 InlineKeyboardButton("Whale Alerts 🐋", callback_data="whale_alerts"),
-                InlineKeyboardButton("Wallet Tracker 💼", callback_data="wallet_tracker"),
+                InlineKeyboardButton(
+                    "Wallet Tracker 💼", callback_data="wallet_tracker"
+                ),
             ],
             [
-                InlineKeyboardButton("Token Statistics 📈", callback_data="token_stats"),
+                InlineKeyboardButton(
+                    "Token Statistics 📈", callback_data="token_stats"
+                ),
             ],
             [
-                InlineKeyboardButton("Quick Commands ⚡", callback_data="quick_commands"),
-                InlineKeyboardButton("🆕Research Agent 🤖", callback_data="research_agent"),
+                InlineKeyboardButton(
+                    "Quick Commands ⚡", callback_data="quick_commands"
+                ),
+                InlineKeyboardButton(
+                    "🆕Research Agent 🤖", callback_data="research_agent"
+                ),
             ],
         ]
 
@@ -104,7 +113,9 @@ class VybeScopeBot:
             del self.user_states[update.effective_user.id]
 
         # Determine message object (could be from command or callback)
-        message = update.callback_query.message if update.callback_query else update.message
+        message = (
+            update.callback_query.message if update.callback_query else update.message
+        )
         if not message:  # Handle cases where message might be missing
             return
 
@@ -117,10 +128,14 @@ class VybeScopeBot:
             try:
                 await message.reply_photo(photo=open("assets/vybe_banner.png", "rb"))
             except FileNotFoundError:
-                self.logger.error("Error: assets/vybe_banner.png not found. Skipping photo.")
+                self.logger.error(
+                    "Error: assets/vybe_banner.png not found. Skipping photo."
+                )
             except telegram.error.BadRequest as e:
                 if "not found" in str(e):
-                    self.logger.error("Error: assets/vybe_banner.png not found. Skipping photo.")
+                    self.logger.error(
+                        "Error: assets/vybe_banner.png not found. Skipping photo."
+                    )
                 else:
                     self.logger.error(
                         f"Error sending start photo (BadRequest): {e}. Skipping photo."
@@ -146,7 +161,9 @@ class VybeScopeBot:
                     )
             else:
                 await message.reply_text(
-                    text=welcome_message, reply_markup=reply_markup, parse_mode="Markdown"
+                    text=welcome_message,
+                    reply_markup=reply_markup,
+                    parse_mode="Markdown",
                 )
         except telegram.error.BadRequest as e:
             if "message is not modified" in str(e):
@@ -183,6 +200,10 @@ class VybeScopeBot:
             chat_id=update.effective_chat.id, action=ChatAction.TYPING
         )
         await whale_alerts_command(update, context)
+
+    async def agent_command(self, update: Update, context: Application) -> None:
+        """Handles the /agent command, opens the Research Agent mini app."""
+        await send_research_agent_miniapp_button(update, context)
 
     async def dashboard_command(self, update: Update, context: Application) -> None:
         """Shows the user's dashboard: tracked wallets and whale alert settings."""
@@ -229,8 +250,12 @@ class VybeScopeBot:
             else:
                 msg += "_None yet. Add one from Wallet Tracker!_\n"
             msg += "\n🐋 *Whale Alert Settings:*\n"
-            msg += f"Status: {'🟢 Enabled' if whale_alerts_enabled else '🔴 Disabled'}\n"
-            msg += f"Threshold: ${threshold:,.2f}" if threshold else "Threshold: _Not set_"
+            msg += (
+                f"Status: {'🟢 Enabled' if whale_alerts_enabled else '🔴 Disabled'}\n"
+            )
+            msg += (
+                f"Threshold: ${threshold:,.2f}" if threshold else "Threshold: _Not set_"
+            )
             msg += "\n\nUse the buttons below to manage your dashboard."
             keyboard = [
                 [
@@ -328,7 +353,8 @@ class VybeScopeBot:
                     ]
                     reply_markup = InlineKeyboardMarkup(keyboard)
                     await update.message.reply_text(
-                        "❌ Threshold must be a positive number!", reply_markup=reply_markup
+                        "❌ Threshold must be a positive number!",
+                        reply_markup=reply_markup,
                     )
                     self.user_states[user_id] = "awaiting_threshold"
                     return
@@ -443,7 +469,9 @@ class VybeScopeBot:
             await query.message.reply_text("💼 Enter the wallet address to remove:")
         elif callback_data == "dashboard_set_threshold":
             self.user_states[user_id] = "dashboard_awaiting_set_threshold"
-            await query.message.reply_text("🐋 Enter the new whale alert threshold (USD):")
+            await query.message.reply_text(
+                "🐋 Enter the new whale alert threshold (USD):"
+            )
         elif callback_data == "dashboard_clear":
             cleared = clear_user_dashboard(user_id)
             if cleared:
@@ -472,7 +500,13 @@ class VybeScopeBot:
                 "• The bot responds to plain text queries for supported operations.\n"
             )
             close_markup = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("Close ❌", callback_data="close_quick_commands")]]
+                [
+                    [
+                        InlineKeyboardButton(
+                            "Close ❌", callback_data="close_quick_commands"
+                        )
+                    ]
+                ]
             )
             await query.message.reply_text(
                 quick_commands_msg, parse_mode="Markdown", reply_markup=close_markup
@@ -512,9 +546,7 @@ class VybeScopeBot:
                     val = tx.get("valueUsd", "N/A")
                     ttype = tx.get("type", "N/A")
                     time_ = tx.get("blockTime", "N/A")
-                    msg += (
-                        f"•✔ {amt} {token} (${val})\nSignature: `{sig}`\nTime: {time_}\n\n"
-                    )
+                    msg += f"•✔ {amt} {token} (${val})\nSignature: `{sig}`\nTime: {time_}\n\n"
                 keyboard = [
                     [
                         InlineKeyboardButton(
@@ -540,7 +572,9 @@ class VybeScopeBot:
 
     async def error_handler(self, update: object, context: Application) -> None:
         """Logs errors and sends a user-friendly message."""
-        self.logger.error(msg="Exception while handling an update:", exc_info=context.error)
+        self.logger.error(
+            msg="Exception while handling an update:", exc_info=context.error
+        )
 
         chat_id = None
         if isinstance(update, Update):
@@ -549,7 +583,9 @@ class VybeScopeBot:
             elif update.effective_user:
                 chat_id = update.effective_user.id
 
-        error_message = "❌ Oops! Something went wrong on my end. Please try again later."
+        error_message = (
+            "❌ Oops! Something went wrong on my end. Please try again later."
+        )
 
         if isinstance(context.error, telegram.error.BadRequest):
             if "message is not modified" in str(context.error):
@@ -561,7 +597,9 @@ class VybeScopeBot:
                     "❌ Sorry, the message you interacted with might be too old."
                 )
         elif isinstance(context.error, requests.RequestException):
-            self.logger.error(f"Network error connecting to external API: {context.error}")
+            self.logger.error(
+                f"Network error connecting to external API: {context.error}"
+            )
             error_message = "❌ Network error: Could not connect to external services. Please try again later."
         elif isinstance(context.error, telegram.error.Forbidden):
             self.logger.warning(
@@ -580,7 +618,9 @@ class VybeScopeBot:
             try:
                 await context.bot.send_message(chat_id=chat_id, text=error_message)
             except Exception as e:
-                self.logger.error(f"Failed to send error message to user {chat_id}: {e}")
+                self.logger.error(
+                    f"Failed to send error message to user {chat_id}: {e}"
+                )
 
     async def whale_alert_job(self):
         """Checks whale transactions for all users with alerts enabled and sends notifications."""
@@ -620,9 +660,13 @@ class VybeScopeBot:
 
                         await check_highest_whale_tx(DummyUpdate(), DummyContext())
                 except BadRequest as e:
-                    self.logger.warning(f"Failed to send whale alert to user {user_id}: {e}")
+                    self.logger.warning(
+                        f"Failed to send whale alert to user {user_id}: {e}"
+                    )
                 except Exception as e:
-                    self.logger.error(f"Error in whale alert job for user {user_id}: {e}")
+                    self.logger.error(
+                        f"Error in whale alert job for user {user_id}: {e}"
+                    )
 
     def run(self):
         self.logger.info("Initializing VybeScope Bot...")
@@ -631,7 +675,9 @@ class VybeScopeBot:
             read_timeout=30.0,
             connect_timeout=30.0,
         )
-        self.application = Application.builder().token(self.TELEGRAM_TOKEN).request(request).build()
+        self.application = (
+            Application.builder().token(self.TELEGRAM_TOKEN).request(request).build()
+        )
 
         async def set_bot_commands():
             commands = [
@@ -649,19 +695,32 @@ class VybeScopeBot:
         asyncio.get_event_loop().run_until_complete(set_bot_commands())
 
         self.application.add_handler(CommandHandler("start", self.start))
-        self.application.add_handler(CommandHandler("threshold", self.threshold_command))
+        self.application.add_handler(
+            CommandHandler("threshold", self.threshold_command)
+        )
         self.application.add_handler(CommandHandler("token", self.token_command))
         self.application.add_handler(CommandHandler("wallet", self.wallet_command))
-        self.application.add_handler(CommandHandler("whalealerts", whale_alerts_command))
+        self.application.add_handler(
+            CommandHandler("whalealerts", whale_alerts_command)
+        )
         self.application.add_handler(CommandHandler("check", self.check_command))
-        self.application.add_handler(CommandHandler("dashboard", self.dashboard_command))
-        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_text))
-        self.application.add_handler(CallbackQueryHandler(research_agent_handler, pattern="^research_agent$"))
+        self.application.add_handler(
+            CommandHandler("dashboard", self.dashboard_command)
+        )
+        self.application.add_handler(CommandHandler("agent", self.agent_command))
+        self.application.add_handler(
+            MessageHandler(filters.TEXT & ~filters.COMMAND, self.handle_text)
+        )
+        self.application.add_handler(
+            CallbackQueryHandler(research_agent_handler, pattern="^research_agent$")
+        )
         self.application.add_handler(CallbackQueryHandler(self.button_handler))
         self.application.add_error_handler(self.error_handler)
 
         self.scheduler = AsyncIOScheduler()
-        self.scheduler.add_job(lambda: asyncio.create_task(self.whale_alert_job()), "interval", minutes=10)
+        self.scheduler.add_job(
+            lambda: asyncio.create_task(self.whale_alert_job()), "interval", minutes=10
+        )
         self.scheduler.start()
 
         self.logger.info("Starting bot polling...")

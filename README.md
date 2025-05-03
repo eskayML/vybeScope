@@ -74,6 +74,9 @@ The whale alert feature monitors large cryptocurrency transactions on the Solana
 - Track specific wallets for significant activity
 
 
+- Schedule checks happens every 5 minutes by default (to prevent excessive calling of the API)
+
+
 ## Implementation Details
 
 This bot is designed to be lightweight and portable:

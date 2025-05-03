@@ -11,14 +11,24 @@ BASE_URL = "https://api.vybenetwork.xyz"
 HEADERS = {"accept": "application/json", "x-api-key": os.getenv("VYBE_API_KEY")}
 
 
+def fetch_token_stats(token_address):
+    """Fetch token stats from Vybe API."""
+    url = f"{BASE_URL}/token/{token_address}"
+    response = requests.get(url, headers=HEADERS)
+    response.raise_for_status()
+    return response.json()
+
+
 def fetch_whale_transaction(min_amount_usd=50000):
     """Fetch whale transactions from Vybe API."""
     if min_amount_usd is None:
         min_amount_usd = 50000
-    start_date = int((datetime.now() - timedelta(seconds=59)).timestamp())
+        
+    start_date = int((datetime.now() - timedelta(seconds=298)).timestamp())
     url = (
         f"{BASE_URL}/token/transfers?minAmount={min_amount_usd}&startDate={start_date}"
     )
+    
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
     transactions = response.json().get("transfers", [])
@@ -38,8 +48,8 @@ def fetch_whale_transaction_for_single_token(
         min_amount_usd = 50000
         
     """Fetch whale transactions from Vybe API for a single token and return the one with the maximum USD value."""
-    start_date = int((datetime.now() - timedelta(seconds=59)).timestamp())
-    url = f"{BASE_URL}/token/transfers?mintAddress={mintAddress}&minAmount={min_amount_usd}&startDate={start_date}&limit={limit}"
+    start_date = int((datetime.now() - timedelta(seconds=298)).timestamp())
+    url = f"{BASE_URL}/token/transfers?mintAddress={mintAddress}&startDate={start_date}&limit={limit}"
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
     transactions = response.json().get("transfers", [])
@@ -51,12 +61,6 @@ def fetch_whale_transaction_for_single_token(
     return max_transaction
 
 
-def fetch_token_stats(token_address):
-    """Fetch token stats from Vybe API."""
-    url = f"{BASE_URL}/token/{token_address}"
-    response = requests.get(url, headers=HEADERS)
-    response.raise_for_status()
-    return response.json()
 
 
 def fetch_wallet_activity(wallet_address, startDate=None):

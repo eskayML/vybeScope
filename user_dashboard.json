@@ -3,9 +3,9 @@
     "wallets": [],
     "whale_alert": {
       "threshold": null,
-      "enabled": true,
+      "enabled": false,
       "tokens": [
-        "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+        "hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux"
       ]
     }
   }

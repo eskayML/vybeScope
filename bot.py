@@ -227,7 +227,8 @@ class VybeScopeBot:
                         "Add Whale Alert 🐋", callback_data="dashboard_add_whale_alert"
                     ),
                     InlineKeyboardButton(
-                        "Remove Whale Alert 🐋", callback_data="dashboard_remove_whale_alert"
+                        "Remove Whale Alert 🐋",
+                        callback_data="dashboard_remove_whale_alert",
                     ),
                 ],
                 [
@@ -272,7 +273,8 @@ class VybeScopeBot:
                         "Add Whale Alert 🐋", callback_data="dashboard_add_whale_alert"
                     ),
                     InlineKeyboardButton(
-                        "Remove Whale Alert 🐋", callback_data="dashboard_remove_whale_alert"
+                        "Remove Whale Alert 🐋",
+                        callback_data="dashboard_remove_whale_alert",
                     ),
                 ],
                 [
@@ -415,6 +417,7 @@ class VybeScopeBot:
 
         elif state == "dashboard_awaiting_add_whale_alert":
             from core.dashboard import add_tracked_whale_alert_token
+
             added = add_tracked_whale_alert_token(user_id, text)
             if added:
                 await update.message.reply_text(
@@ -427,6 +430,7 @@ class VybeScopeBot:
             await self.dashboard_command(update, context)
         elif state == "dashboard_awaiting_remove_whale_alert":
             from core.dashboard import remove_tracked_whale_alert_token
+
             removed = remove_tracked_whale_alert_token(user_id, text)
             if removed:
                 await update.message.reply_text(
@@ -483,10 +487,14 @@ class VybeScopeBot:
             )
         elif callback_data == "dashboard_add_whale_alert":
             self.user_states[user_id] = "dashboard_awaiting_add_whale_alert"
-            await query.message.reply_text("🐋 Enter the token address to add to whale alerts:")
+            await query.message.reply_text(
+                "🐋 Enter the token address to add to whale alerts:"
+            )
         elif callback_data == "dashboard_remove_whale_alert":
             self.user_states[user_id] = "dashboard_awaiting_remove_whale_alert"
-            await query.message.reply_text("🐋 Enter the token address to remove from whale alerts:")
+            await query.message.reply_text(
+                "🐋 Enter the token address to remove from whale alerts:"
+            )
         elif callback_data == "dashboard_clear":
             cleared = clear_user_dashboard(user_id)
             if cleared:
@@ -590,7 +598,12 @@ class VybeScopeBot:
             return
         elif callback_data.startswith("track_whale_alert_"):
             token_address = callback_data.replace("track_whale_alert_", "")
-            from core.dashboard import get_tracked_whale_alert_tokens, add_tracked_whale_alert_token, remove_tracked_whale_alert_token
+            from core.dashboard import (
+                add_tracked_whale_alert_token,
+                get_tracked_whale_alert_tokens,
+                remove_tracked_whale_alert_token,
+            )
+
             tracked_tokens = get_tracked_whale_alert_tokens(user_id)
             is_tracked = token_address in tracked_tokens
             if is_tracked:
@@ -603,7 +616,12 @@ class VybeScopeBot:
                 status = "🔴 Not Tracking"
             keyboard = [
                 [InlineKeyboardButton(action_text, callback_data=action_callback)],
-                [InlineKeyboardButton("Back to Token Stats", callback_data=f"token_stats_back_{token_address}")],
+                [
+                    InlineKeyboardButton(
+                        "Back to Token Stats",
+                        callback_data=f"token_stats_back_{token_address}",
+                    )
+                ],
                 [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
@@ -615,13 +633,19 @@ class VybeScopeBot:
         elif callback_data.startswith("add_whale_alert_token_"):
             token_address = callback_data.replace("add_whale_alert_token_", "")
             from core.dashboard import add_tracked_whale_alert_token
+
             add_tracked_whale_alert_token(user_id, token_address)
-            await query.message.reply_text(f"✅ Token `{token_address}` added to your whale alerts!")
+            await query.message.reply_text(
+                f"✅ Token `{token_address}` added to your whale alerts!"
+            )
         elif callback_data.startswith("remove_whale_alert_token_"):
             token_address = callback_data.replace("remove_whale_alert_token_", "")
             from core.dashboard import remove_tracked_whale_alert_token
+
             remove_tracked_whale_alert_token(user_id, token_address)
-            await query.message.reply_text(f"✅ Token `{token_address}` removed from your whale alerts!")
+            await query.message.reply_text(
+                f"✅ Token `{token_address}` removed from your whale alerts!"
+            )
         else:
             self.logger.info(f"Received unhandled callback_data: {callback_data}")
 
@@ -729,7 +753,7 @@ class VybeScopeBot:
         # Use Telegram's JobQueue to schedule whale alerts
         self.application.job_queue.run_repeating(
             whale_alert_job,
-            interval=60,  # every 60 seconds
+            interval=300,  # every 60 seconds
             first=0,
             name="whale_alert_job",
             data=self.application,

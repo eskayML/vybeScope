@@ -123,10 +123,15 @@ async def whale_alert_job(application: Application):
                     )
                     if not tx:
                         continue
+                    value_usd = tx.get("valueUsd", "0")
+                    try:
+                        if float(value_usd) < whale_threshold:
+                            continue
+                    except Exception:
+                        continue
                     block_time = tx.get("blockTime")
                     token = tx.get("tokenSymbol", "Unknown Token")
                     amount = tx.get("amount", "?")
-                    value_usd = tx.get("valueUsd", "?")
                     sender = tx.get("fromOwner", "Unknown")
                     receiver = tx.get("toOwner", "Unknown")
                     signature = tx.get("signature", "")

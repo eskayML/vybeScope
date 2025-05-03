@@ -11,12 +11,44 @@ BASE_URL = "https://api.vybenetwork.xyz"
 HEADERS = {"accept": "application/json", "x-api-key": os.getenv("VYBE_API_KEY")}
 
 
-def fetch_whale_transactions(min_amount_usd=50000, limit=2):
+def fetch_whale_transaction(min_amount_usd=50000):
     """Fetch whale transactions from Vybe API."""
-    url = f"{BASE_URL}/token/transfers?minAmount={min_amount_usd}"
+    if min_amount_usd is None:
+        min_amount_usd = 50000
+    start_date = int((datetime.now() - timedelta(seconds=59)).timestamp())
+    url = (
+        f"{BASE_URL}/token/transfers?minAmount={min_amount_usd}&startDate={start_date}"
+    )
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
-    return response.json()
+    transactions = response.json().get("transfers", [])
+
+    if not transactions:
+        return None
+
+    # Find the transaction with the maximum USD value
+    max_transaction = max(transactions, key=lambda x: float(x.get("valueUsd", 0)))
+    return max_transaction
+
+
+def fetch_whale_transaction_for_single_token(
+    mintAddress, min_amount_usd=50000, limit=1000
+):
+    if min_amount_usd is None:
+        min_amount_usd = 50000
+        
+    """Fetch whale transactions from Vybe API for a single token and return the one with the maximum USD value."""
+    start_date = int((datetime.now() - timedelta(seconds=59)).timestamp())
+    url = f"{BASE_URL}/token/transfers?mintAddress={mintAddress}&minAmount={min_amount_usd}&startDate={start_date}&limit={limit}"
+    response = requests.get(url, headers=HEADERS)
+    response.raise_for_status()
+    transactions = response.json().get("transfers", [])
+
+    if not transactions:
+        return None
+
+    max_transaction = max(transactions, key=lambda x: float(x.get("valueUsd", 0)))
+    return max_transaction
 
 
 def fetch_token_stats(token_address):
@@ -44,14 +76,17 @@ def fetch_wallet_activity(wallet_address, startDate=None):
     sender_data = sender_response.json().get("transfers", [])
 
     combined = receiver_data + sender_data
-    combined_sorted = sorted(combined, key=lambda x: x.get("blockTime", 0), reverse=True)
+    combined_sorted = sorted(
+        combined, key=lambda x: x.get("blockTime", 0), reverse=True
+    )
     return combined_sorted
+
 
 def get_wallet_token_balance(owner_address):
     """Fetch token balances for a specific wallet address from Vybe API."""
     url = f"{BASE_URL}/account/token-balance/{owner_address}"
     response = requests.get(url, headers=HEADERS)
-    response.raise_for_status() # Will raise an HTTPError for bad responses (4xx or 5xx)
+    response.raise_for_status()  # Will raise an HTTPError for bad responses (4xx or 5xx)
     return response.json()
 
 
@@ -74,19 +109,22 @@ def fetch_top_token_holders(mint_address, count=5):
 
 
 if __name__ == "__main__":
-    
-    
     # balance = get_wallet_token_balance("2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy")
     # print(balance)
-    
+
     # print("WALLET ACTIVITY")
     # activity = fetch_wallet_activity("J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah")
     # print(activity)
 
-    top_holders = fetch_top_token_holders("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
-    print(top_holders)
+    # top_holders = fetch_top_token_holders("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
+    # print(top_holders)
 
-    # transactions = fetch_whale_transactions()
+    token_whales = fetch_whale_transaction_for_single_token(
+        "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+    )
+    print(token_whales)
+
+    # transactions = fetch_whale_transaction()
     # print(transactions)
 
     # token_stats = fetch_token_stats("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")

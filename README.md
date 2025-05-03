@@ -41,7 +41,7 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
 ## Quick Start
 1. Clone the repo and install requirements:
    ```
-   git clone https://github.com/your-username/vybescope.git
+   git clone https://github.com/eskayML/vybeScope
    cd vybescope
    ```
 
@@ -72,6 +72,7 @@ The whale alert feature monitors large cryptocurrency transactions on the Solana
 - Receive alerts when transactions above their threshold occur
 - View detailed information about each large transaction
 - Track specific wallets for significant activity
+
 
 ## Implementation Details
 

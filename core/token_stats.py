@@ -215,13 +215,17 @@ async def process_token(user_id: int, token_input: str, context: Application) ->
             response_text += f"\n[More details]({explorer_url})"
         # --- End Updated Response Text ---
 
-        # --- Add Top Holders Button ---
+        # --- Add Whale Alerts Button ---
         keyboard = [
             [
                 InlineKeyboardButton(
+                    "Track Whale Alerts 🐋",
+                    callback_data=f"track_whale_alert_{fetched_address}",
+                ),
+                InlineKeyboardButton(
                     "Show Top Holders 🏆",
                     callback_data=f"show_top_holders_{fetched_address}",
-                )
+                ),
             ],
             [
                 InlineKeyboardButton(

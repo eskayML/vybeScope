@@ -1,16 +1,15 @@
 import logging
 import os
 import time
-from decimal import Decimal, InvalidOperation
 
-import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.error import BadRequest
 from telegram.ext import Application
 
-from api import fetch_whale_transactions
+from api import fetch_whale_transaction, fetch_whale_transaction_for_single_token
+from core.dashboard import _load_dashboard, get_tracked_whale_alert_tokens
 
 from .dashboard import get_whale_alerts_enabled, set_whale_alerts_enabled
-from .utils import format_transaction_details
 
 logger = logging.getLogger(__name__)
 
@@ -36,11 +35,6 @@ async def whale_alerts_command(update: Update, context: Application) -> None:
             ),
         ],
         [
-            InlineKeyboardButton(
-                "Check Highest Tx Now 📊", callback_data="check_highest_tx"
-            ),
-        ],
-        [
             InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
         ],
     ]
@@ -49,7 +43,7 @@ async def whale_alerts_command(update: Update, context: Application) -> None:
     await message.reply_text(
         "🐳 *Whale Alert Options* ⚙️\n\n"
         f"Alerts are currently {'🟢 ON' if is_enabled else '🔴 OFF'}\n\n"
-        "Set a USD threshold (default is 50,000) for future alerts or check the latest single highest transaction detected.",
+        "Set a USD threshold (default is 50,000) for future alerts.",
         reply_markup=reply_markup,
         parse_mode="Markdown",
     )
@@ -107,141 +101,57 @@ async def set_threshold_prompt(
 
     user_id = user.id
     await message.reply_text(
-        "💰 Enter your minimum USD value threshold for whale alerts (e.g., 10000), or type 'skip':"
+        "💰 Enter your minimum USD value threshold for whale alerts (e.g., 50000), or type 'skip':"
     )
     user_states[user_id] = "awaiting_threshold"
 
 
-# Check for the single highest whale transaction
-async def check_highest_whale_tx(update: Update, context: Application) -> None:
-    """Fetches transactions and displays the single highest one based on valueUsd."""
-    query = update.callback_query
-    await query.answer()
-    message = query.message
-
-    await message.reply_text(
-        "🔍 Fetching latest transactions to find the highest whale move..."
-    )
-
-    try:
-        data = fetch_whale_transactions(
-            min_amount_usd=50000
-        )  # Set default threshold to 50,000
-        transactions = data.get("transfers", [])
-
-        if not transactions:
-            keyboard = [
-                [
-                    InlineKeyboardButton(
-                        "Try Again 🔄", callback_data="check_highest_tx"
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        "Back to Whale Options 🐳", callback_data="whale_alerts"
-                    )
-                ],
-                [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await message.reply_text(
-                "🕒 No recent large transactions found.", reply_markup=reply_markup
-            )
-            return
-
-        # Find the transaction with the highest 'valueUsd'
-        highest_tx = None
-        max_value = Decimal("-Infinity")
-
-        for tx in transactions:
+async def whale_alert_job(application: Application):
+    """Checks whale transactions for all users with alerts enabled and sends notifications."""
+    dashboard = _load_dashboard()
+    for user_id, user_data in dashboard.items():
+        whale_alert = user_data.get("whale_alert", {})
+        if whale_alert.get("enabled"):
+            tracked_tokens = get_tracked_whale_alert_tokens(user_id)
+            if not tracked_tokens:
+                continue
             try:
-                value_usd_str = tx.get("valueUsd", "0")
-                value_usd = Decimal(value_usd_str) if value_usd_str else Decimal("0")
-                if value_usd > max_value:
-                    max_value = value_usd
-                    highest_tx = tx
-            except (InvalidOperation, TypeError):
-                logger.warning(
-                    f"Could not parse valueUsd '{tx.get('valueUsd')}' for tx: {tx.get('signature')}"
-                )
-                continue  # Skip this transaction if valueUsd is invalid
-
-        if highest_tx:
-            response_text = format_transaction_details(highest_tx)
-            # Remove the header from the helper function's output for this specific context
-            response_text = "\n".join(response_text.split("\n")[2:])
-            response_text = f"🐋 *Most Recent Whale Transaction* 🚨\n\n{response_text}"
-
-            keyboard = [
-                [
-                    InlineKeyboardButton(
-                        "Check Again 🔄", callback_data="check_highest_tx"
+                whale_threshold = whale_alert.get("threshold", 50000)
+                for token_address in tracked_tokens:
+                    tx = fetch_whale_transaction_for_single_token(
+                        token_address, min_amount_usd=whale_threshold
                     )
-                ],
-                [
-                    InlineKeyboardButton(
-                        "Back to Whale Options 🐳", callback_data="whale_alerts"
+                    if not tx:
+                        continue
+                    block_time = tx.get("blockTime")
+                    token = tx.get("tokenSymbol", "Unknown Token")
+                    amount = tx.get("amount", "?")
+                    value_usd = tx.get("valueUsd", "?")
+                    sender = tx.get("fromOwner", "Unknown")
+                    receiver = tx.get("toOwner", "Unknown")
+                    signature = tx.get("signature", "")
+                    solscan_url = f"https://solscan.io/tx/{signature}"
+                    alert_msg = (
+                        f"🐋 *Whale Alert!* 🐋\n\n"
+                        f"Token: `{token}`\n"
+                        f"Amount: {amount}\n"
+                        f"Value: ${float(value_usd):,.2f}\n"
+                        f"From: `{sender}`\n"
+                        f"To: `{receiver}`\n"
+                        f"[View on Solscan]({solscan_url})"
                     )
-                ],
-                [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await message.reply_text(
-                response_text,
-                reply_markup=reply_markup,
-                parse_mode="Markdown",
-                disable_web_page_preview=True,
-            )
-        else:
-            # This case might occur if all transactions had invalid valueUsd
-            keyboard = [
-                [
-                    InlineKeyboardButton(
-                        "Try Again 🔄", callback_data="check_highest_tx"
-                    )
-                ],
-                [
-                    InlineKeyboardButton(
-                        "Back to Whale Options 🐳", callback_data="whale_alerts"
-                    )
-                ],
-                [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await message.reply_text(
-                "🕒 No valid transactions found to determine the highest value.",
-                reply_markup=reply_markup,
-            )
-
-    except requests.RequestException as e:
-        logger.error(f"Error fetching Vybe API for highest tx check: {e}")
-        keyboard = [
-            [InlineKeyboardButton("Try Again 🔄", callback_data="check_highest_tx")],
-            [
-                InlineKeyboardButton(
-                    "Back to Whale Options 🐳", callback_data="whale_alerts"
-                )
-            ],
-            [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await message.reply_text(
-            "❌ Couldn't fetch transaction data right now. Please try again.",
-            reply_markup=reply_markup,
-        )
-    except Exception as e:
-        logger.error(f"An unexpected error occurred in check_highest_whale_tx: {e}")
-        # Provide a more specific back button here
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "Back to Whale Options 🐳", callback_data="whale_alerts"
-                )
-            ],
-            [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await message.reply_text(
-            "❌ An unexpected error occurred. Please try again later.",
-            reply_markup=reply_markup,
-        )
+                    try:
+                        await application.bot.send_message(
+                            chat_id=user_id,
+                            text=alert_msg,
+                            parse_mode="Markdown",
+                            disable_web_page_preview=False,
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to send whale alert to user {user_id}: {e}"
+                        )
+            except BadRequest as e:
+                logger.warning(f"Failed to send whale alert to user {user_id}: {e}")
+            except Exception as e:
+                logger.error(f"Error in whale alert job for user {user_id}: {e}")

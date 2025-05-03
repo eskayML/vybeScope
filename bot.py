@@ -1,15 +1,13 @@
 import asyncio
+import datetime
 import logging
 import os
-import time
-import datetime
+
 import requests
 import telegram
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from dotenv import load_dotenv
 from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ChatAction
-from telegram.error import BadRequest
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -19,9 +17,7 @@ from telegram.ext import (
 )
 from telegram.request import HTTPXRequest
 
-from api import fetch_whale_transactions
 from core.dashboard import (
-    _load_dashboard,
     clear_user_dashboard,
     get_user_dashboard,
     remove_tracked_wallet,
@@ -39,12 +35,10 @@ from core.wallet_tracker import process_wallet
 from core.wallet_tracker import (
     wallet_prompt as core_wallet_prompt,  # Rename to avoid clash
 )
-
-# Import core functionalities
 from core.whale_alerts import (
-    check_highest_whale_tx,
     get_whale_alerts_enabled,
     toggle_whale_alerts,
+    whale_alert_job,
     whale_alerts_command,
 )
 from core.whale_alerts import (
@@ -230,6 +224,14 @@ class VybeScopeBot:
                 ],
                 [
                     InlineKeyboardButton(
+                        "Add Whale Alert 🐋", callback_data="dashboard_add_whale_alert"
+                    ),
+                    InlineKeyboardButton(
+                        "Remove Whale Alert 🐋", callback_data="dashboard_remove_whale_alert"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
                         "Set Whale Threshold ⚙", callback_data="dashboard_set_threshold"
                     ),
                     InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
@@ -263,6 +265,14 @@ class VybeScopeBot:
                     ),
                     InlineKeyboardButton(
                         "Remove Wallet ➖", callback_data="dashboard_remove_wallet"
+                    ),
+                ],
+                [
+                    InlineKeyboardButton(
+                        "Add Whale Alert 🐋", callback_data="dashboard_add_whale_alert"
+                    ),
+                    InlineKeyboardButton(
+                        "Remove Whale Alert 🐋", callback_data="dashboard_remove_whale_alert"
                     ),
                 ],
                 [
@@ -323,22 +333,7 @@ class VybeScopeBot:
 
         if state == "awaiting_threshold":
             if text.lower() == "skip":
-                keyboard = [
-                    [
-                        InlineKeyboardButton(
-                            "Check Highest Tx Now 📊", callback_data="check_highest_tx"
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "Back to Whale Options 🐳", callback_data="whale_alerts"
-                        )
-                    ],
-                ]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                await update.message.reply_text(
-                    "⏭️ Threshold setting skipped.", reply_markup=reply_markup
-                )
+                await whale_alerts_command(update, context)
                 return
             try:
                 threshold_value = float(text)
@@ -358,23 +353,10 @@ class VybeScopeBot:
                     self.user_states[user_id] = "awaiting_threshold"
                     return
                 self.user_thresholds[user_id] = threshold_value
-                keyboard = [
-                    [
-                        InlineKeyboardButton(
-                            "Check Highest Tx Now 📊", callback_data="check_highest_tx"
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "Back to Whale Options 🐳", callback_data="whale_alerts"
-                        )
-                    ],
-                ]
-                reply_markup = InlineKeyboardMarkup(keyboard)
                 await update.message.reply_text(
-                    f"✅ Threshold set to ${threshold_value:,.2f}! Future alert feature is pending. You can check the current highest transaction now.",
-                    reply_markup=reply_markup,
+                    f"✅ Threshold set to ${threshold_value:,.2f}! Future alert feature is pending.",
                 )
+                await whale_alerts_command(update, context)
             except ValueError:
                 keyboard = [
                     [
@@ -431,6 +413,31 @@ class VybeScopeBot:
                 )
                 self.user_states[user_id] = "dashboard_awaiting_set_threshold"
 
+        elif state == "dashboard_awaiting_add_whale_alert":
+            from core.dashboard import add_tracked_whale_alert_token
+            added = add_tracked_whale_alert_token(user_id, text)
+            if added:
+                await update.message.reply_text(
+                    f"✅ Token `{text}` added to your whale alerts!"
+                )
+            else:
+                await update.message.reply_text(
+                    f"❌ Token `{text}` is already in your whale alerts."
+                )
+            await self.dashboard_command(update, context)
+        elif state == "dashboard_awaiting_remove_whale_alert":
+            from core.dashboard import remove_tracked_whale_alert_token
+            removed = remove_tracked_whale_alert_token(user_id, text)
+            if removed:
+                await update.message.reply_text(
+                    f"✅ Token `{text}` removed from your whale alerts!"
+                )
+            else:
+                await update.message.reply_text(
+                    f"❌ Token `{text}` is not in your whale alerts."
+                )
+            await self.dashboard_command(update, context)
+
         else:
             self.logger.warning(f"User {user_id} was in an unknown state: {state}")
             await update.message.reply_text("Something went wrong. Please try /start.")
@@ -457,8 +464,6 @@ class VybeScopeBot:
             await toggle_whale_alerts(update, context)
         elif callback_data == "set_threshold":
             await core_set_threshold_prompt(update, context, self.user_states)
-        elif callback_data == "check_highest_tx":
-            await check_highest_whale_tx(update, context)
         elif callback_data == "token_stats":
             await core_token_prompt(update, context, self.user_states)
         elif callback_data == "wallet_tracker":
@@ -476,6 +481,12 @@ class VybeScopeBot:
             await query.message.reply_text(
                 "🐋 Enter the new whale alert threshold (USD):"
             )
+        elif callback_data == "dashboard_add_whale_alert":
+            self.user_states[user_id] = "dashboard_awaiting_add_whale_alert"
+            await query.message.reply_text("🐋 Enter the token address to add to whale alerts:")
+        elif callback_data == "dashboard_remove_whale_alert":
+            self.user_states[user_id] = "dashboard_awaiting_remove_whale_alert"
+            await query.message.reply_text("🐋 Enter the token address to remove from whale alerts:")
         elif callback_data == "dashboard_clear":
             cleared = clear_user_dashboard(user_id)
             if cleared:
@@ -550,7 +561,7 @@ class VybeScopeBot:
                     val = tx.get("valueUsd", "N/A")
                     ttype = tx.get("type", "N/A")
                     time_ = tx.get("blockTime", "N/A")
-                    
+
                     solscan_url = f"https://solscan.io/tx/{sig}"
                     msg += (
                         f"💰 *Amount:* {amt} {token} (${val})\n"
@@ -577,6 +588,40 @@ class VybeScopeBot:
             except Exception as e:
                 self.logger.warning(f"Failed to delete recent tx message: {e}")
             return
+        elif callback_data.startswith("track_whale_alert_"):
+            token_address = callback_data.replace("track_whale_alert_", "")
+            from core.dashboard import get_tracked_whale_alert_tokens, add_tracked_whale_alert_token, remove_tracked_whale_alert_token
+            tracked_tokens = get_tracked_whale_alert_tokens(user_id)
+            is_tracked = token_address in tracked_tokens
+            if is_tracked:
+                action_text = "Remove from Whale Alerts"
+                action_callback = f"remove_whale_alert_token_{token_address}"
+                status = "🟢 Tracking"
+            else:
+                action_text = "Add to Whale Alerts"
+                action_callback = f"add_whale_alert_token_{token_address}"
+                status = "🔴 Not Tracking"
+            keyboard = [
+                [InlineKeyboardButton(action_text, callback_data=action_callback)],
+                [InlineKeyboardButton("Back to Token Stats", callback_data=f"token_stats_back_{token_address}")],
+                [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await query.message.reply_text(
+                f"🐋 Whale Alerts for Token:\n`{token_address}`\nStatus: {status}",
+                reply_markup=reply_markup,
+                parse_mode="Markdown",
+            )
+        elif callback_data.startswith("add_whale_alert_token_"):
+            token_address = callback_data.replace("add_whale_alert_token_", "")
+            from core.dashboard import add_tracked_whale_alert_token
+            add_tracked_whale_alert_token(user_id, token_address)
+            await query.message.reply_text(f"✅ Token `{token_address}` added to your whale alerts!")
+        elif callback_data.startswith("remove_whale_alert_token_"):
+            token_address = callback_data.replace("remove_whale_alert_token_", "")
+            from core.dashboard import remove_tracked_whale_alert_token
+            remove_tracked_whale_alert_token(user_id, token_address)
+            await query.message.reply_text(f"✅ Token `{token_address}` removed from your whale alerts!")
         else:
             self.logger.info(f"Received unhandled callback_data: {callback_data}")
 
@@ -632,52 +677,6 @@ class VybeScopeBot:
                     f"Failed to send error message to user {chat_id}: {e}"
                 )
 
-    async def whale_alert_job(self):
-        """Checks whale transactions for all users with alerts enabled and sends notifications."""
-        dashboard = _load_dashboard()
-        for user_id, user_data in dashboard.items():
-            whale_alert = user_data.get("whale_alert", {})
-            if whale_alert.get("enabled"):
-                try:
-                    data = fetch_whale_transactions(
-                        min_amount_usd=whale_alert.get("threshold", 50000)
-                    )
-                    transactions = data.get("transfers", [])
-                    if not transactions:
-                        continue
-                    highest_tx = max(
-                        transactions, key=lambda tx: float(tx.get("valueUsd", 0))
-                    )
-
-
-                    block_time = highest_tx.get("blockTime")
-                    if block_time and (time.time() - int(block_time)) <= 11 * 60:
-
-                        class DummyQuery:
-                            message = type(
-                                "msg", (), {"reply_text": lambda *a, **k: None}
-                            )()
-
-                            async def answer(self):
-                                pass
-
-                        class DummyUpdate:
-                            callback_query = DummyQuery()
-                            effective_user = type("user", (), {"id": int(user_id)})()
-
-                        class DummyContext:
-                            bot = self.application.bot
-
-                        await check_highest_whale_tx(DummyUpdate(), DummyContext())
-                except BadRequest as e:
-                    self.logger.warning(
-                        f"Failed to send whale alert to user {user_id}: {e}"
-                    )
-                except Exception as e:
-                    self.logger.error(
-                        f"Error in whale alert job for user {user_id}: {e}"
-                    )
-
     def run(self):
         self.logger.info("Initializing VybeScope Bot...")
         request = HTTPXRequest(
@@ -727,11 +726,14 @@ class VybeScopeBot:
         self.application.add_handler(CallbackQueryHandler(self.button_handler))
         self.application.add_error_handler(self.error_handler)
 
-        self.scheduler = AsyncIOScheduler()
-        self.scheduler.add_job(
-            lambda: asyncio.create_task(self.whale_alert_job()), "interval", minutes=10
+        # Use Telegram's JobQueue to schedule whale alerts
+        self.application.job_queue.run_repeating(
+            whale_alert_job,
+            interval=60,  # every 60 seconds
+            first=0,
+            name="whale_alert_job",
+            data=self.application,
         )
-        self.scheduler.start()
 
         self.logger.info("Starting bot polling...")
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)

@@ -49,6 +49,17 @@ async def whale_alerts_command(update: Update, context: Application) -> None:
                 InlineKeyboardButton(threshold_text, callback_data=threshold_data),
             ]
         )
+    # Add Whale Alert and Remove Whale Alert buttons
+    keyboard.append(
+        [
+            InlineKeyboardButton(
+                "➕ Add Whale Alert", callback_data="dashboard_add_whale_alert"
+            ),
+            InlineKeyboardButton(
+                "➖ Remove Whale Alert", callback_data="dashboard_remove_whale_alert"
+            ),
+        ]
+    )
     keyboard.append(
         [
             InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
@@ -167,16 +178,16 @@ async def whale_alert_job(application: Application):
                         f"👥 Receiver: \n`{receiver}`\n\n"
                         f"🔗 [View on Solscan]({solscan_url})"
                     )
-                    # Add inline buttons for this token
+                    # Add inline buttons for this token (show threshold in button)
                     alert_markup = InlineKeyboardMarkup(
                         [
                             [
                                 InlineKeyboardButton(
-                                    "Disable Alert",
-                                    callback_data=f"disable_alert:{token_address}",
+                                    f"{'🔴 Disable' if settings.get('enabled', False) else '🟢 Enable'} {token_address[:4]}...",
+                                    callback_data=f"toggle_token_{'off' if settings.get('enabled', False) else 'on'}:{token_address}",
                                 ),
                                 InlineKeyboardButton(
-                                    "Change Threshold",
+                                    f"Set Threshold (${settings.get('threshold', 0)})",
                                     callback_data=f"change_threshold:{token_address}",
                                 ),
                             ]

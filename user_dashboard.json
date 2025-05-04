@@ -4,11 +4,12 @@
     "whale_alert": {
       "enabled": true,
       "tokens": {
-        "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN": {
-          "enabled": true,
-          "threshold": 1000000.0
+        "hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux": {
+          "enabled": false,
+          "threshold": 20000.0
         }
-      }
+      },
+      "threshold": 777.0
     }
   }
 }

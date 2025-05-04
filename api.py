@@ -24,7 +24,7 @@ def fetch_whale_transaction(min_amount_usd=50000):
     if min_amount_usd is None:
         min_amount_usd = 50000
     
-    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS")) or 300
+    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS",300))
     start_date = int((datetime.now() - timedelta(seconds = alert_intervals - 2 )).timestamp())
     url = (
         f"{BASE_URL}/token/transfers?startDate={start_date}"
@@ -61,7 +61,7 @@ def fetch_whale_transaction_for_single_token(
     if min_amount_usd is None:
         min_amount_usd = 50000
     
-    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS")) or 300
+    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS",300)) 
     start_date = int((datetime.now() - timedelta(seconds = alert_intervals - 2 )).timestamp())
 
     url = f"{BASE_URL}/token/transfers?mintAddress={mintAddress}&startDate={start_date}&limit={limit}"

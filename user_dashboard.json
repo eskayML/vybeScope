@@ -1,6 +1,8 @@
 {
   "6423826292": {
-    "wallets": [],
+    "wallets": [
+      "2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy"
+    ],
     "whale_alert": {
       "enabled": true,
       "tokens": {

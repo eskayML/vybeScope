@@ -31,7 +31,11 @@ from core.research_agent import (
 )
 from core.token_stats import process_token, show_top_holders
 from core.token_stats import token_prompt as core_token_prompt  # Rename to avoid clash
-from core.wallet_tracker import process_wallet
+from core.wallet_tracker import (
+    process_wallet,
+    show_recent_transactions,
+    start_wallet_tracker_scheduler,
+)
 from core.wallet_tracker import (
     wallet_prompt as core_wallet_prompt,  # Rename to avoid clash
 )
@@ -603,44 +607,8 @@ class VybeScopeBot:
             return
         elif callback_data.startswith("show_recent_tx_"):
             wallet_address = callback_data.replace("show_recent_tx_", "")
-            from api import fetch_wallet_activity
-
-            try:
-                txs = fetch_wallet_activity(wallet_address)
-                if not txs:
-                    await query.message.reply_text(
-                        "🚫 No recent transactions found for this wallet."
-                    )
-                    return
-                msg = f"🕒 *Top 5 Most Recent Transactions for*\n`{wallet_address}`\n\n"
-                for tx in txs[:5]:
-                    sig = tx.get("signature", "N/A")
-                    amt = tx.get("amount", "N/A")
-                    token = tx.get("tokenSymbol", "N/A")
-                    val = tx.get("valueUsd", "N/A")
-                    ttype = tx.get("type", "N/A")
-                    time_ = tx.get("blockTime", "N/A")
-
-                    solscan_url = f"https://solscan.io/tx/{sig}"
-                    msg += (
-                        f"💰 *Amount:* {amt} {token} (${val})\n"
-                        f"🔗 [View on Solscan]({solscan_url})\n"
-                        f"⏰ *Time:* {time_}\n\n"
-                    )
-                keyboard = [
-                    [
-                        InlineKeyboardButton(
-                            "🔙 Back to Wallet Info",
-                            callback_data=f"recent_tx_back_{wallet_address}",
-                        )
-                    ]
-                ]
-                reply_markup = InlineKeyboardMarkup(keyboard)
-                await query.message.reply_text(
-                    msg, parse_mode="Markdown", reply_markup=reply_markup
-                )
-            except Exception as e:
-                await query.message.reply_text(f"❌ Error fetching transactions: {e}")
+            # Call our new function to show recent transactions
+            await show_recent_transactions(update, context, wallet_address)
         elif callback_data.startswith("recent_tx_back_"):
             try:
                 await query.message.delete()
@@ -808,14 +776,18 @@ class VybeScopeBot:
 
         # Use Telegram's JobQueue to schedule whale alerts
 
-        alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS")) or 300
+        alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS",300)) 
         self.application.job_queue.run_repeating(
             whale_alert_job,
-            interval=alert_intervals,  # every 60 seconds
+            interval=alert_intervals,  
             first=0,
             name="whale_alert_job",
             data=self.application,
         )
+
+        # Start the wallet transaction tracking scheduler
+        self.wallet_tracker_thread = start_wallet_tracker_scheduler(self.application)
+        self.logger.info("Wallet transaction tracking scheduler started")
 
         self.logger.info("Starting bot polling...")
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)

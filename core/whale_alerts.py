@@ -150,20 +150,22 @@ async def whale_alert_job(application: Application):
                     except Exception:
                         continue
                     block_time = tx.get("blockTime")
-                    token = tx.get("tokenSymbol", "Unknown Token")
-                    amount = tx.get("amount", "?")
+                    token_symbol = tx.get("tokenSymbol", "Unknown Token")
+                    token_address_display = token_address
+                    amount = tx.get("calculatedAmount") or tx.get("amount", "?")
                     sender = tx.get("fromOwner", "Unknown")
                     receiver = tx.get("toOwner", "Unknown")
                     signature = tx.get("signature", "")
                     solscan_url = f"https://solscan.io/tx/{signature}"
                     alert_msg = (
-                        f"🐋 *Whale Alert!* 🐋\n\n"
-                        f"Token: `{token}`\n"
-                        f"Amount: {amount}\n"
-                        f"Value: ${float(value_usd):,.2f}\n"
-                        f"From: `{sender}`\n"
-                        f"To: `{receiver}`\n"
-                        f"[View on Solscan]({solscan_url})"
+                        f"🐋💸 *Whale Alert!* 💸🐋\n\n"
+                        f"🪙 Token: *{token_symbol}*\n"
+                        f"🏷️ Address: `{token_address_display}`\n"
+                        f"💰 Amount: {amount} {token_symbol}\n"
+                        f"💵 Value: ${float(value_usd):,.2f}\n\n"
+                        f"👤 Sender: \n`{sender}`\n\n"
+                        f"👥 Receiver: \n`{receiver}`\n\n"
+                        f"🔗 [View on Solscan]({solscan_url})"
                     )
                     # Add inline buttons for this token
                     alert_markup = InlineKeyboardMarkup(

@@ -27,27 +27,37 @@ def fetch_whale_transaction(min_amount_usd=50000):
     alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS")) or 300
     start_date = int((datetime.now() - timedelta(seconds = alert_intervals - 2 )).timestamp())
     url = (
-        f"{BASE_URL}/token/transfers?minAmount={min_amount_usd}&startDate={start_date}"
+        f"{BASE_URL}/token/transfers?startDate={start_date}"
     )
+    
     
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
+    
+
     transactions = response.json().get("transfers", [])
 
     if not transactions:
         return None
 
-    # Find the transaction with the maximum USD value
-    max_transaction = max(transactions, key=lambda x: float(x.get("valueUsd", 0)))
-    return max_transaction
-
+    # Get the top 10 transactions sorted by USD value
+    top_transactions = sorted(transactions, key=lambda x: float(x.get("valueUsd", 0)), reverse=True)[:10]
+    
+    # Loop through each transaction to fetch the token symbol using mintAddress
+    for transaction in top_transactions:
+        mint_address = transaction.get("mintAddress")
+        if mint_address:
+            token_stats = fetch_token_stats(mint_address)
+            transaction["tokenSymbol"] = token_stats.get("symbol", "SOL")
+    
+    return top_transactions
 
 
 def fetch_whale_transaction_for_single_token(
     mintAddress, min_amount_usd=50000, limit=1000
 ):
     """Fetch whale transactions from Vybe API for a single token and return the one with the maximum USD value."""
-   
+    
     if min_amount_usd is None:
         min_amount_usd = 50000
     
@@ -58,13 +68,17 @@ def fetch_whale_transaction_for_single_token(
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
     transactions = response.json().get("transfers", [])
-
+    
     if not transactions:
         return None
 
     max_transaction = max(transactions, key=lambda x: float(x.get("valueUsd", 0)))
-    return max_transaction
 
+    # Fetch token stats to get the token symbol
+    token_stats = fetch_token_stats(mintAddress)
+    max_transaction["tokenSymbol"] = token_stats.get("symbol", "SOL")
+
+    return max_transaction
 
 
 
@@ -133,9 +147,9 @@ if __name__ == "__main__":
     )
     print(token_whales)
 
+    # print("WHALE TRANSACTION")
     # transactions = fetch_whale_transaction()
     # print(transactions)
 
     # token_stats = fetch_token_stats("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
-
     # print(token_stats)

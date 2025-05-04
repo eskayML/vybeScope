@@ -7,7 +7,13 @@ from telegram.error import BadRequest
 from telegram.ext import Application
 
 from api import fetch_whale_transaction, fetch_whale_transaction_for_single_token
-from core.dashboard import _load_dashboard, get_tracked_whale_alert_tokens
+from core.dashboard import (
+    _load_dashboard,
+    get_token_alert_settings,
+    get_tracked_whale_alert_tokens,
+    set_token_alert_enabled,
+    set_token_alert_threshold,
+)
 
 from .dashboard import get_whale_alerts_enabled, set_whale_alerts_enabled
 
@@ -22,28 +28,42 @@ async def whale_alerts_command(update: Update, context: Application) -> None:
 
     # Get current toggle state
     is_enabled = get_whale_alerts_enabled(user_id)
-    toggle_text = "🔴 Disable Alerts" if is_enabled else "🟢 Enable Alerts"
-    toggle_data = "toggle_whale_off" if is_enabled else "toggle_whale_on"
+    tracked_tokens = get_tracked_whale_alert_tokens(user_id)
+    token_settings = [
+        (token, get_token_alert_settings(user_id, token)) for token in tracked_tokens
+    ]
 
-    keyboard = [
-        [
-            InlineKeyboardButton(toggle_text, callback_data=toggle_data),
-        ],
-        [
-            InlineKeyboardButton(
-                "Set Alert Threshold 💰", callback_data="set_threshold"
-            ),
-        ],
+    keyboard = []
+    for token, settings in token_settings:
+        toggle_text = (
+            f"🔴 Disable {token[:4]}..."
+            if settings["enabled"]
+            else f"🟢 Enable {token[:4]}..."
+        )
+        toggle_data = f"toggle_token_{'off' if settings['enabled'] else 'on'}:{token}"
+        threshold_text = f"Set Threshold (${settings['threshold']})"
+        threshold_data = f"set_token_threshold:{token}"
+        keyboard.append(
+            [
+                InlineKeyboardButton(toggle_text, callback_data=toggle_data),
+                InlineKeyboardButton(threshold_text, callback_data=threshold_data),
+            ]
+        )
+    keyboard.append(
         [
             InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
-        ],
-    ]
+        ]
+    )
     reply_markup = InlineKeyboardMarkup(keyboard)
 
+    status_lines = [
+        f"{token[:6]}...: {'🟢 ON' if settings['enabled'] else '🔴 OFF'}, Threshold: ${settings['threshold']}"
+        for token, settings in token_settings
+    ]
+    status_text = "\n".join(status_lines) if status_lines else "No tokens tracked."
+
     await message.reply_text(
-        "🐳 *Whale Alert Options* ⚙️\n\n"
-        f"Alerts are currently {'🟢 ON' if is_enabled else '🔴 OFF'}\n\n"
-        "Set a USD threshold (default is 50,000) for future alerts.",
+        f"🐳 *Whale Alert Options* ⚙️\n\n{status_text}\n\nManage alerts for each token below.",
         reply_markup=reply_markup,
         parse_mode="Markdown",
     )
@@ -112,20 +132,20 @@ async def whale_alert_job(application: Application):
     for user_id, user_data in dashboard.items():
         whale_alert = user_data.get("whale_alert", {})
         if whale_alert.get("enabled"):
-            tracked_tokens = get_tracked_whale_alert_tokens(user_id)
-            if not tracked_tokens:
-                continue
-            try:
-                whale_threshold = whale_alert.get("threshold", 50000)
-                for token_address in tracked_tokens:
+            tokens_dict = whale_alert.get("tokens", {})
+            for token_address, settings in tokens_dict.items():
+                if not settings.get("enabled", False):
+                    continue
+                threshold = settings.get("threshold", 5)
+                try:
                     tx = fetch_whale_transaction_for_single_token(
-                        token_address, min_amount_usd=whale_threshold
+                        token_address, min_amount_usd=threshold
                     )
                     if not tx:
                         continue
                     value_usd = tx.get("valueUsd", "0")
                     try:
-                        if float(value_usd) < whale_threshold:
+                        if float(value_usd) < threshold:
                             continue
                     except Exception:
                         continue
@@ -145,18 +165,34 @@ async def whale_alert_job(application: Application):
                         f"To: `{receiver}`\n"
                         f"[View on Solscan]({solscan_url})"
                     )
+                    # Add inline buttons for this token
+                    alert_markup = InlineKeyboardMarkup(
+                        [
+                            [
+                                InlineKeyboardButton(
+                                    "Disable Alert",
+                                    callback_data=f"disable_alert:{token_address}",
+                                ),
+                                InlineKeyboardButton(
+                                    "Change Threshold",
+                                    callback_data=f"change_threshold:{token_address}",
+                                ),
+                            ]
+                        ]
+                    )
                     try:
                         await application.bot.send_message(
                             chat_id=user_id,
                             text=alert_msg,
                             parse_mode="Markdown",
                             disable_web_page_preview=False,
+                            reply_markup=alert_markup,
                         )
                     except Exception as e:
                         logger.error(
                             f"Failed to send whale alert to user {user_id}: {e}"
                         )
-            except BadRequest as e:
-                logger.warning(f"Failed to send whale alert to user {user_id}: {e}")
-            except Exception as e:
-                logger.error(f"Error in whale alert job for user {user_id}: {e}")
+                except BadRequest as e:
+                    logger.warning(f"Failed to send whale alert to user {user_id}: {e}")
+                except Exception as e:
+                    logger.error(f"Error in whale alert job for user {user_id}: {e}")

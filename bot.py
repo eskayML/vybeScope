@@ -442,6 +442,31 @@ class VybeScopeBot:
                 )
             await self.dashboard_command(update, context)
 
+        elif state.startswith("awaiting_token_threshold_"):
+            token_address = state.replace("awaiting_token_threshold_", "")
+            try:
+                threshold_value = float(text)
+                if threshold_value <= 0:
+                    await update.message.reply_text(
+                        "❌ Threshold must be a positive number!"
+                    )
+                    self.user_states[user_id] = (
+                        f"awaiting_token_threshold_{token_address}"
+                    )
+                    return
+                from core.dashboard import set_token_alert_threshold
+
+                set_token_alert_threshold(user_id, token_address, threshold_value)
+                await update.message.reply_text(
+                    f"✅ Whale alert threshold for `{token_address}` set to ${threshold_value:,.2f}!"
+                )
+                await whale_alerts_command(update, context)
+            except ValueError:
+                await update.message.reply_text(
+                    "❌ Invalid amount! Please enter a number (e.g., 5000)."
+                )
+                self.user_states[user_id] = f"awaiting_token_threshold_{token_address}"
+
         else:
             self.logger.warning(f"User {user_id} was in an unknown state: {state}")
             await update.message.reply_text("Something went wrong. Please try /start.")
@@ -646,6 +671,40 @@ class VybeScopeBot:
             await query.message.reply_text(
                 f"✅ Token `{token_address}` removed from your whale alerts!"
             )
+        elif callback_data.startswith("toggle_token_on:") or callback_data.startswith(
+            "toggle_token_off:"
+        ):
+            from core.dashboard import set_token_alert_enabled
+
+            parts = callback_data.split(":", 1)
+            if len(parts) == 2:
+                token_address = parts[1]
+                enable = callback_data.startswith("toggle_token_on:")
+                set_token_alert_enabled(user_id, token_address, enable)
+                await query.message.reply_text(
+                    f"{'✅ Enabled' if enable else '❌ Disabled'} whale alert for token `{token_address}`.",
+                    parse_mode="Markdown",
+                )
+                await whale_alerts_command(update, context)
+        elif callback_data.startswith("disable_alert:"):
+            from core.dashboard import set_token_alert_enabled
+
+            token_address = callback_data.split(":", 1)[1]
+            set_token_alert_enabled(user_id, token_address, False)
+            await query.message.reply_text(
+                f"❌ Disabled whale alert for token `{token_address}`.",
+                parse_mode="Markdown",
+            )
+            await whale_alerts_command(update, context)
+        elif callback_data.startswith(
+            "set_token_threshold:"
+        ) or callback_data.startswith("change_threshold:"):
+            token_address = callback_data.split(":", 1)[1]
+            self.user_states[user_id] = f"awaiting_token_threshold_{token_address}"
+            await query.message.reply_text(
+                f"💰 Enter the new USD threshold for token `{token_address}`:",
+                parse_mode="Markdown",
+            )
         else:
             self.logger.info(f"Received unhandled callback_data: {callback_data}")
 
@@ -751,9 +810,11 @@ class VybeScopeBot:
         self.application.add_error_handler(self.error_handler)
 
         # Use Telegram's JobQueue to schedule whale alerts
+
+        alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS")) or 300
         self.application.job_queue.run_repeating(
             whale_alert_job,
-            interval=300,  # every 60 seconds
+            interval=alert_intervals,  # every 60 seconds
             first=0,
             name="whale_alert_job",
             data=self.application,

@@ -23,8 +23,9 @@ def fetch_whale_transaction(min_amount_usd=50000):
     """Fetch whale transactions from Vybe API."""
     if min_amount_usd is None:
         min_amount_usd = 50000
-        
-    start_date = int((datetime.now() - timedelta(seconds=298)).timestamp())
+    
+    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS")) or 300
+    start_date = int((datetime.now() - timedelta(seconds = alert_intervals - 2 )).timestamp())
     url = (
         f"{BASE_URL}/token/transfers?minAmount={min_amount_usd}&startDate={start_date}"
     )
@@ -41,14 +42,18 @@ def fetch_whale_transaction(min_amount_usd=50000):
     return max_transaction
 
 
+
 def fetch_whale_transaction_for_single_token(
     mintAddress, min_amount_usd=50000, limit=1000
 ):
+    """Fetch whale transactions from Vybe API for a single token and return the one with the maximum USD value."""
+   
     if min_amount_usd is None:
         min_amount_usd = 50000
-        
-    """Fetch whale transactions from Vybe API for a single token and return the one with the maximum USD value."""
-    start_date = int((datetime.now() - timedelta(seconds=298)).timestamp())
+    
+    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS")) or 300
+    start_date = int((datetime.now() - timedelta(seconds = alert_intervals - 2 )).timestamp())
+
     url = f"{BASE_URL}/token/transfers?mintAddress={mintAddress}&startDate={start_date}&limit={limit}"
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()

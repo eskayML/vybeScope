@@ -9,6 +9,7 @@ from telegram.ext import Application
 from api import fetch_whale_transaction, fetch_whale_transaction_for_single_token
 from core.dashboard import (
     _load_dashboard,
+    add_tracked_whale_alert_token,
     get_token_alert_settings,
     get_tracked_whale_alert_tokens,
     set_token_alert_enabled,
@@ -209,3 +210,46 @@ async def whale_alert_job(application: Application):
                     logger.warning(f"Failed to send whale alert to user {user_id}: {e}")
                 except Exception as e:
                     logger.error(f"Error in whale alert job for user {user_id}: {e}")
+
+
+# Handler for Track Whale Alerts button from token stats
+async def track_token_whale_alert(update: Update, context: Application) -> None:
+    """Handles adding a token to whale alerts from token stats screen."""
+    query = update.callback_query
+    await query.answer()
+    user_id = update.effective_user.id
+
+    # Extract token address from callback data
+    # Format is "track_whale_alert_{token_address}"
+    token_address = query.data.replace("track_whale_alert_", "")
+
+    # Add the token to whale alerts with default settings
+    added = add_tracked_whale_alert_token(user_id, token_address)
+
+    # Show feedback to user
+    if added:
+        # Show animation with whale image
+        whale_image_path = os.path.join(
+            os.path.dirname(__file__), "..", "assets", "whale_pepe.jpeg"
+        )
+        image_msg = await query.message.reply_photo(
+            photo=open(whale_image_path, "rb"),
+            caption=f"🐳 Token added to Whale Alerts! 🚀\n\nYou'll now receive alerts for large transactions of this token.",
+        )
+
+        # Show the whale alerts screen with the updated token
+        await whale_alerts_command(update, context)
+
+        # Delete the image after a short delay
+        time.sleep(3)
+        try:
+            await context.bot.delete_message(
+                chat_id=user_id, message_id=image_msg.message_id
+            )
+        except Exception as e:
+            logger.warning(f"Failed to delete whale alert image: {e}")
+    else:
+        await query.message.reply_text(
+            f"This token is already in your whale alerts! 🐳\n"
+        )
+        await whale_alerts_command(update, context)

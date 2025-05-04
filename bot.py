@@ -208,7 +208,19 @@ class VybeScopeBot:
         wallets = dashboard.get("wallets", [])
         threshold = dashboard.get("whale_alert", {}).get("threshold")
         whale_alerts_enabled = get_whale_alerts_enabled(user_id)
-        is_empty = not wallets and not threshold
+
+        # Get tracked tokens and their settings
+        from core.dashboard import (
+            get_token_alert_settings,
+            get_tracked_whale_alert_tokens,
+        )
+
+        tracked_tokens = get_tracked_whale_alert_tokens(user_id)
+        token_settings = {
+            token: get_token_alert_settings(user_id, token) for token in tracked_tokens
+        }
+
+        is_empty = not wallets and not threshold and not tracked_tokens
 
         if is_empty:
             msg = "📊 *Your Dashboard is Empty!*\n\n"
@@ -245,19 +257,35 @@ class VybeScopeBot:
             ]
         else:
             msg = "📊 *Your Dashboard*\n\n"
+
+            # Display wallets section
             msg += f"💼 *Tracked Wallets ({len(wallets)}):*\n"
             if wallets:
                 for w in wallets:
                     msg += f"`{w}`\n"
             else:
-                msg += "_None yet. Add one from Wallet Tracker!_\n"
-            msg += "\n🐋 *Whale Alert Settings:*\n"
+                msg += "_None yet. Add one Immediately!_\n"
+
+            # Display whale alert section with total count
             msg += (
-                f"Status: {'🟢 Enabled' if whale_alerts_enabled else '🔴 Disabled'}\n"
+                f"\n🐋 *Whale Alert Settings ({len(tracked_tokens)} tokens tracked):*\n"
             )
-            msg += (
-                f"Threshold: ${threshold:,.2f}" if threshold else "Threshold: _Not set_"
-            )
+
+            # Display tracked tokens section if any exist
+            if tracked_tokens:
+                msg += "*Tracked Tokens:*\n"
+                for token in tracked_tokens:
+                    settings = token_settings[token]
+                    status = (
+                        "🟢 Enabled"
+                        if settings.get("enabled", False)
+                        else "🔴 Disabled"
+                    )
+                    token_threshold = settings.get("threshold", 50000)
+                    msg += f"• `{token[:10]}...`\n"
+                    msg += f"  Status: {status}\n"
+                    msg += f"  Threshold: ${token_threshold:,.2f}\n"
+
             msg += "\n\nUse the buttons below to manage your dashboard."
             keyboard = [
                 [
@@ -279,14 +307,11 @@ class VybeScopeBot:
                 ],
                 [
                     InlineKeyboardButton(
-                        "Set Whale Threshold ⚙", callback_data="dashboard_set_threshold"
-                    ),
-                    InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
-                ],
-                [
-                    InlineKeyboardButton(
                         "🗑️ Clear Dashboard", callback_data="dashboard_clear"
                     ),
+                ],
+                [
+                    InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
                 ],
             ]
 
@@ -547,6 +572,7 @@ class VybeScopeBot:
                 "• Send a wallet or token address directly to get instant info.\n"
                 "• The bot responds to plain text queries for supported operations.\n"
             )
+
             close_markup = InlineKeyboardMarkup(
                 [
                     [
@@ -622,39 +648,10 @@ class VybeScopeBot:
                 self.logger.warning(f"Failed to delete recent tx message: {e}")
             return
         elif callback_data.startswith("track_whale_alert_"):
-            token_address = callback_data.replace("track_whale_alert_", "")
-            from core.dashboard import (
-                add_tracked_whale_alert_token,
-                get_tracked_whale_alert_tokens,
-                remove_tracked_whale_alert_token,
-            )
+            # Call our new function that handles adding tokens to whale alerts
+            from core.whale_alerts import track_token_whale_alert
 
-            tracked_tokens = get_tracked_whale_alert_tokens(user_id)
-            is_tracked = token_address in tracked_tokens
-            if is_tracked:
-                action_text = "Remove from Whale Alerts"
-                action_callback = f"remove_whale_alert_token_{token_address}"
-                status = "🟢 Tracking"
-            else:
-                action_text = "Add to Whale Alerts"
-                action_callback = f"add_whale_alert_token_{token_address}"
-                status = "🔴 Not Tracking"
-            keyboard = [
-                [InlineKeyboardButton(action_text, callback_data=action_callback)],
-                [
-                    InlineKeyboardButton(
-                        "Back to Token Stats",
-                        callback_data=f"token_stats_back_{token_address}",
-                    )
-                ],
-                [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await query.message.reply_text(
-                f"🐋 Whale Alerts for Token:\n`{token_address}`\nStatus: {status}",
-                reply_markup=reply_markup,
-                parse_mode="Markdown",
-            )
+            await track_token_whale_alert(update, context)
         elif callback_data.startswith("add_whale_alert_token_"):
             token_address = callback_data.replace("add_whale_alert_token_", "")
             from core.dashboard import add_tracked_whale_alert_token

@@ -34,9 +34,9 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
 - 🐋 Customizable whale alerts for large transactions
 - 📊 Token stats, price, and top holders lookup
 - 💼 Personal dashboard for wallet and alert management
-- 🔔 Real-time notifications and analytics
+- 🔔 Real-time notifications for whale alerts and Tracked Wallet Transactions
 - 🤖 Research Agent Telegram Mini App (For advanced AI analytics and research.) 
-- ⚡ No database required—lightweight and portable
+
 
 ## Quick Start
 1. Clone the repo and install requirements:
@@ -56,25 +56,18 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
    VYBE_API_KEY=your_vybe_api_key_here
    ```
 
+   Some optional env parameters you could also include are
+
+   ```
+   WHALE_ALERT_INTERVAL_SECONDS = 300 
+   # not adding this env variable leaves the default value in the code at 300 (5 minutes)
+   ```
+
 4. Start the bot:
    ```
    python bot.py
    ```
 
-## Bot Commands
-
-
-## Whale Alert Feature
-
-The whale alert feature monitors large cryptocurrency transactions on the Solana blockchain. Users can:
-
-- Set custom thresholds to define what constitutes a "whale" transaction
-- Receive alerts when transactions above their threshold occur
-- View detailed information about each large transaction
-- Track specific wallets for significant activity
-
-
-- Schedule checks happens every 5 minutes by default (to prevent excessive calling of the API)
 
 
 ## Implementation Details

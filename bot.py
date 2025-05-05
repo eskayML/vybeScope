@@ -240,16 +240,7 @@ class VybeScopeBot:
                 ],
                 [
                     InlineKeyboardButton(
-                        "Add Whale Alert 🐋", callback_data="dashboard_add_whale_alert"
-                    ),
-                    InlineKeyboardButton(
-                        "Remove Whale Alert 🐋",
-                        callback_data="dashboard_remove_whale_alert",
-                    ),
-                ],
-                [
-                    InlineKeyboardButton(
-                        "Set Whale Threshold ⚙", callback_data="dashboard_set_threshold"
+                        "Whale Alert Options 🐋", callback_data="whale_alerts"
                     ),
                     InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
                 ],
@@ -286,7 +277,7 @@ class VybeScopeBot:
                         else "🔴 Disabled"
                     )
                     token_threshold = settings.get("threshold", 50000)
-                    msg += f"• `{token[:10]}...`\n"
+                    msg += f"• `{token}`\n"
                     msg += f"  Status: {status}\n"
                     msg += f"  Threshold: ${token_threshold:,.2f}\n"
 
@@ -302,20 +293,14 @@ class VybeScopeBot:
                 ],
                 [
                     InlineKeyboardButton(
-                        "Add Whale Alert 🐋", callback_data="dashboard_add_whale_alert"
+                        "Whale Alert Options 🐋", callback_data="whale_alerts"
                     ),
-                    InlineKeyboardButton(
-                        "Remove Whale Alert 🐋",
-                        callback_data="dashboard_remove_whale_alert",
-                    ),
+                    InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
                 ],
                 [
                     InlineKeyboardButton(
                         "🗑️ Clear Dashboard", callback_data="dashboard_clear"
                     ),
-                ],
-                [
-                    InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
                 ],
             ]
 
@@ -776,10 +761,10 @@ class VybeScopeBot:
 
         # Use Telegram's JobQueue to schedule whale alerts
 
-        alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS",300)) 
+        alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS", 300))
         self.application.job_queue.run_repeating(
             whale_alert_job,
-            interval=alert_intervals,  
+            interval=alert_intervals,
             first=0,
             name="whale_alert_job",
             data=self.application,

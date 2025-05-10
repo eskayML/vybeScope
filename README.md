@@ -40,26 +40,21 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
 # Notification System
 I have also tested and validated the scheduled notification system for both whale alerts and wallet tracking.
 
-
-## Alert & Notification System
-
-VybeScope offers a comprehensive notification system to keep you updated on wallet activities and significant market movements:
-
 <table style="border-collapse: collapse; border: none; text-align: center; width: 100%;">
    <tr style="border: none; font-weight: bold;">
       <td style="border: none;">Feature</td>
       <td style="border: none;">Description</td>
-      <td style="border: none;">Demo</td>
+      <td style="border: none; width: 300px;">Demo</td>
    </tr>
    <tr style="border: none;">
       <td style="border: none;">Wallet Transfer Alerts</td>
       <td style="border: none;">Receive instant notifications whenever your tracked wallets send or receive funds. The system monitors transactions in real-time and delivers detailed alerts showing transaction amount, token type, and wallet addresses involved. Customize tracking for multiple wallets simultaneously.</td>
-      <td style="border: none;"><img src="https://i.postimg.cc/HkQ8V3BY/wallet-tracking-demo.jpg" alt="Wallet Alert Example" width="250"/></td>
+      <td style="border: none;"><img src="https://i.postimg.cc/HkQ8V3BY/wallet-tracking-demo.jpg" alt="Wallet Alert Example" width="300"/></td>
    </tr>
    <tr style="border: none;">
       <td style="border: none;">Whale Transaction Alerts</td>
       <td style="border: none;">Stay ahead of the market with customizable whale alerts. Set your own thresholds for transaction sizes to monitor large trades that could impact token prices. Each alert provides detailed information including transaction value, percentage of total supply moved, and links to explore the transaction further.</td>
-      <td style="border: none;"><img src="https://i.postimg.cc/0NPMmmBp/whale-alert-demo.jpg" alt="Whale Alert Example" width="250"/></td>
+      <td style="border: none;"><img src="https://i.postimg.cc/0NPMmmBp/whale-alert-demo.jpg" alt="Whale Alert Example" width="300"/></td>
    </tr>
 </table>
 

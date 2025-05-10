@@ -1,7 +1,7 @@
 import asyncio
-import datetime
 import logging
 import os
+import re
 
 import requests
 import telegram
@@ -21,7 +21,6 @@ from core.dashboard import (
     clear_user_dashboard,
     get_user_dashboard,
     remove_tracked_wallet,
-    set_whale_alert_threshold,
 )
 
 # --- Research Agent Integration ---
@@ -40,14 +39,9 @@ from core.wallet_tracker import (
     wallet_prompt as core_wallet_prompt,  # Rename to avoid clash
 )
 from core.whale_alerts import (
-    get_whale_alerts_enabled,
-    toggle_whale_alerts,
-    whale_alert_job,
-    whale_alerts_command,
-)
-from core.whale_alerts import (
     set_threshold_prompt as core_set_threshold_prompt,  # Rename to avoid clash
 )
+from core.whale_alerts import whale_alert_job, whale_alerts_command
 
 
 class VybeScopeBot:
@@ -210,8 +204,6 @@ class VybeScopeBot:
         user_id = update.effective_user.id
         dashboard = get_user_dashboard(user_id)
         wallets = dashboard.get("wallets", [])
-        threshold = dashboard.get("whale_alert", {}).get("threshold")
-        whale_alerts_enabled = get_whale_alerts_enabled(user_id)
 
         # Get tracked tokens and their settings
         from core.dashboard import (
@@ -224,11 +216,11 @@ class VybeScopeBot:
             token: get_token_alert_settings(user_id, token) for token in tracked_tokens
         }
 
-        is_empty = not wallets and not threshold and not tracked_tokens
+        is_empty = not wallets and not tracked_tokens
 
         if is_empty:
             msg = "📊 *Your Dashboard is Empty!*\n\n"
-            msg += "Add a wallet or set a whale alert threshold to get started."
+            msg += "Add a wallet or set up whale alerts for tokens to get started."
             keyboard = [
                 [
                     InlineKeyboardButton(
@@ -240,7 +232,7 @@ class VybeScopeBot:
                 ],
                 [
                     InlineKeyboardButton(
-                        "Whale Alert Options 🐋", callback_data="whale_alerts"
+                        "Edit Whale Alerts 🐋", callback_data="whale_alerts"
                     ),
                     InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
                 ],
@@ -395,6 +387,15 @@ class VybeScopeBot:
             await process_wallet(user_id, text, context)
 
         elif state == "dashboard_awaiting_add_wallet":
+            # Validate wallet address format before processing
+            if not re.match(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$", text):
+                await update.message.reply_text(
+                    "❌ Invalid Solana wallet address format. Please ensure it is a valid Solana address (e.g., 3qArN...)."
+                )
+                self.user_states[user_id] = (
+                    "dashboard_awaiting_add_wallet"  # Keep user in the same state
+                )
+                return
             await process_wallet(user_id, text, context)
 
         elif state == "dashboard_awaiting_remove_wallet":
@@ -408,26 +409,6 @@ class VybeScopeBot:
                     f"❌ Wallet `{text}` is not in your dashboard, so it cannot be removed."
                 )
             await self.dashboard_command(update, context)
-
-        elif state == "dashboard_awaiting_set_threshold":
-            try:
-                threshold_value = float(text)
-                if threshold_value <= 0:
-                    await update.message.reply_text(
-                        "❌ Threshold must be a positive number!"
-                    )
-                    self.user_states[user_id] = "dashboard_awaiting_set_threshold"
-                    return
-                set_whale_alert_threshold(user_id, threshold_value)
-                await update.message.reply_text(
-                    f"✅ Whale alert threshold set to ${threshold_value:,.2f}!"
-                )
-                await self.dashboard_command(update, context)
-            except ValueError:
-                await update.message.reply_text(
-                    "❌ Invalid amount! Please enter a number (e.g., 5000)."
-                )
-                self.user_states[user_id] = "dashboard_awaiting_set_threshold"
 
         elif state == "dashboard_awaiting_add_whale_alert":
             from core.dashboard import add_tracked_whale_alert_token
@@ -504,7 +485,8 @@ class VybeScopeBot:
         elif callback_data == "whale_alerts":
             await whale_alerts_command(update, context)
         elif callback_data in ["toggle_whale_on", "toggle_whale_off"]:
-            await toggle_whale_alerts(update, context)
+            # Deprecated - redirect to whale alerts page
+            await whale_alerts_command(update, context)
         elif callback_data == "set_threshold":
             await core_set_threshold_prompt(update, context, self.user_states)
         elif callback_data == "token_stats":
@@ -520,10 +502,8 @@ class VybeScopeBot:
             self.user_states[user_id] = "dashboard_awaiting_remove_wallet"
             await query.message.reply_text("💼 Enter the wallet address to remove:")
         elif callback_data == "dashboard_set_threshold":
-            self.user_states[user_id] = "dashboard_awaiting_set_threshold"
-            await query.message.reply_text(
-                "🐋 Enter the new whale alert threshold (USD):"
-            )
+            # Redirect to whale alerts page for token-specific settings
+            await whale_alerts_command(update, context)
         elif callback_data == "dashboard_add_whale_alert":
             self.user_states[user_id] = "dashboard_awaiting_add_whale_alert"
             await query.message.reply_text(

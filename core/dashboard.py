@@ -29,8 +29,7 @@ def get_user_dashboard(user_id):
         {
             "wallets": [],
             "whale_alert": {
-                "threshold": None,
-                "enabled": True,
+                "tokens": {},
             },
         },
     )
@@ -43,8 +42,7 @@ def add_tracked_wallet(user_id, wallet_address):
         {
             "wallets": [],
             "whale_alert": {
-                "threshold": None,
-                "enabled": True,
+                "tokens": {},
             },
         },
     )
@@ -62,8 +60,7 @@ def remove_tracked_wallet(user_id, wallet_address):
         {
             "wallets": [],
             "whale_alert": {
-                "threshold": None,
-                "enabled": True,
+                "tokens": {},
             },
         },
     )
@@ -72,68 +69,6 @@ def remove_tracked_wallet(user_id, wallet_address):
         _save_dashboard(data)
         return True
     return False
-
-
-def set_whale_alert_threshold(user_id, threshold):
-    data = _load_dashboard()
-    user = data.setdefault(
-        str(user_id),
-        {
-            "wallets": [],
-            "whale_alert": {
-                "threshold": None,
-                "enabled": True,
-            },
-        },
-    )
-    user["whale_alert"]["threshold"] = threshold
-    _save_dashboard(data)
-
-
-def get_whale_alert_threshold(user_id):
-    data = _load_dashboard()
-    user = data.get(
-        str(user_id),
-        {
-            "wallets": [],
-            "whale_alert": {
-                "threshold": None,
-                "enabled": True,
-            },
-        },
-    )
-    return user["whale_alert"].get("threshold")
-
-
-def set_whale_alerts_enabled(user_id, enabled):
-    data = _load_dashboard()
-    user = data.setdefault(
-        str(user_id),
-        {
-            "wallets": [],
-            "whale_alert": {
-                "threshold": None,
-                "enabled": True,
-            },
-        },
-    )
-    user["whale_alert"]["enabled"] = enabled
-    _save_dashboard(data)
-
-
-def get_whale_alerts_enabled(user_id):
-    data = _load_dashboard()
-    user = data.get(
-        str(user_id),
-        {
-            "wallets": [],
-            "whale_alert": {
-                "threshold": None,
-                "enabled": True,
-            },
-        },
-    )
-    return user["whale_alert"].get("enabled", False)
 
 
 def clear_user_dashboard(user_id):
@@ -156,7 +91,6 @@ def add_tracked_whale_alert_token(
         {
             "wallets": [],
             "whale_alert": {
-                "enabled": True,
                 "tokens": {},
             },
         },
@@ -181,7 +115,6 @@ def remove_tracked_whale_alert_token(user_id, token_address):
         {
             "wallets": [],
             "whale_alert": {
-                "enabled": True,
                 "tokens": {},
             },
         },
@@ -203,7 +136,6 @@ def get_tracked_whale_alert_tokens(user_id):
         {
             "wallets": [],
             "whale_alert": {
-                "enabled": True,
                 "tokens": {},
             },
         },
@@ -224,9 +156,7 @@ def get_token_alert_settings(user_id, token_address):
 
 def set_token_alert_enabled(user_id, token_address, enabled):
     data = _load_dashboard()
-    user = data.setdefault(
-        str(user_id), {"wallets": [], "whale_alert": {"enabled": True, "tokens": {}}}
-    )
+    user = data.setdefault(str(user_id), {"wallets": [], "whale_alert": {"tokens": {}}})
     whale_alert = user["whale_alert"]
     if "tokens" not in whale_alert or not isinstance(whale_alert["tokens"], dict):
         whale_alert["tokens"] = {}
@@ -239,9 +169,7 @@ def set_token_alert_enabled(user_id, token_address, enabled):
 
 def set_token_alert_threshold(user_id, token_address, threshold):
     data = _load_dashboard()
-    user = data.setdefault(
-        str(user_id), {"wallets": [], "whale_alert": {"enabled": True, "tokens": {}}}
-    )
+    user = data.setdefault(str(user_id), {"wallets": [], "whale_alert": {"tokens": {}}})
     whale_alert = user["whale_alert"]
     if "tokens" not in whale_alert or not isinstance(whale_alert["tokens"], dict):
         whale_alert["tokens"] = {}
@@ -250,3 +178,13 @@ def set_token_alert_threshold(user_id, token_address, threshold):
     else:
         whale_alert["tokens"][token_address]["threshold"] = threshold
     _save_dashboard(data)
+
+
+def set_whale_alerts_enabled(user_id, enabled):
+    # Deprecated function, kept for compatibility but does nothing
+    pass
+
+
+def get_whale_alerts_enabled(user_id):
+    # Deprecated function, kept for compatibility but always returns True
+    return True

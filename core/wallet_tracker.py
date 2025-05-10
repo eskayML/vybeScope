@@ -7,6 +7,7 @@ from threading import Thread
 
 import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.constants import ChatAction
 from telegram.ext import Application
 
 from api import fetch_wallet_activity, get_wallet_token_balance
@@ -72,8 +73,9 @@ async def process_wallet(
         reply_markup = InlineKeyboardMarkup(keyboard)
         await context.bot.send_message(
             chat_id=user_id,
-            text="❌ Invalid Solana wallet address format.",
+            text="❌ Invalid Solana wallet address format. Please ensure it is a valid Solana address (e.g., 3qArN...).",
             reply_markup=reply_markup,
+            parse_mode="Markdown",
         )
         return
 
@@ -161,7 +163,6 @@ async def process_wallet(
                 name = token.get("name", "Unknown Token")
                 amount_str = token.get("amount", "0")
                 value_usd_str = token.get("valueUsd", "0")
-                decimals = token.get("decimals", 0)
                 price_usd_str = token.get("priceUsd", "N/A")
                 price_change_1d_str = token.get(
                     "priceUsd1dChange", "N/A"
@@ -174,8 +175,6 @@ async def process_wallet(
                 amount_formatted = amount_str  # Fallback
                 value_usd_formatted = "N/A"
                 price_usd_formatted = "N/A"
-                price_change_formatted = ""
-                value_change_formatted = ""
 
                 # Format amount (display raw value with commas)
                 try:
@@ -216,22 +215,12 @@ async def process_wallet(
                     price_change_1d = (
                         float(price_change_1d_str) * 100
                     )  # API gives decimal, convert to %
-                    pc_sign = "+" if price_change_1d >= 0 else ""
-                    pc_emoji = "📈" if price_change_1d >= 0 else "📉"
-                    price_change_formatted = (
-                        f"{pc_emoji} {pc_sign}{price_change_1d:.2f}% (24h)"
-                    )
                 except (ValueError, TypeError):
                     pass  # Keep fallback
 
                 # Format value change (absolute)
                 try:
                     value_change_1d = float(value_change_1d_str)
-                    vc_sign = "+" if value_change_1d >= 0 else ""
-                    vc_emoji = "📈" if value_change_1d >= 0 else "📉"
-                    value_change_formatted = (
-                        f"{vc_emoji} {vc_sign}${value_change_1d:,.2f} (24h)"
-                    )
                 except (ValueError, TypeError):
                     pass  # Keep fallback
 
@@ -387,7 +376,7 @@ async def check_recent_transactions(wallet_address, user_id, application):
                 tx_formatted = format_transaction_details(tx, wallet_address)
 
                 # Create message text
-                message = f"🚨 *New Transaction Detected!*\n\n"
+                message = "🚨 *New Transaction Detected!*\n\n"
                 message += f"💼 *Wallet:* `{wallet_address}`\n\n"
                 message += tx_formatted
 
@@ -421,106 +410,59 @@ async def check_recent_transactions(wallet_address, user_id, application):
         )
 
 
-async def show_recent_transactions(update, context, wallet_address):
-    """
-    Show recent transactions for a wallet address when the user clicks "Show Recent Transactions".
-
-    Args:
-        update: The update object from Telegram
-        context: The context object from Telegram
-        wallet_address: The wallet address to show transactions for
-    """
-    user = update.effective_user
+async def show_recent_transactions(
+    update: Update, context: Application, wallet_address: str
+) -> None:
+    """Fetches and displays recent transactions for a given wallet address."""
     query = update.callback_query
+    user_id = query.from_user.id if query else update.effective_user.id
 
-    if query:
-        await query.answer()
-
-    # Send message indicating we're fetching transactions
-    message = await context.bot.send_message(
-        chat_id=user.id,
-        text=f"⏳ Fetching recent transactions for wallet `{wallet_address[:6]}...`",
-        parse_mode="Markdown",
-    )
+    await context.bot.send_chat_action(chat_id=user_id, action=ChatAction.TYPING)
 
     try:
-        # Calculate startDate as 24 hours ago in unix timestamp (to show more transactions)
-        start_date = int((datetime.now() - timedelta(hours=300)).timestamp())
-
-        # Fetch wallet activity for the past 24 hours
-        transactions = fetch_wallet_activity(wallet_address, startDate=start_date)
+        # Fetch recent activity (both sent and received)
+        transactions = fetch_wallet_activity(wallet_address)
 
         if not transactions:
-            keyboard = [
-                [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-
-            await context.bot.edit_message_text(
-                chat_id=user.id,
-                message_id=message.message_id,
-                text=f"🤷‍♂️ No recent transactions found for wallet `{wallet_address}` in the past 24 hours.",
-                reply_markup=reply_markup,
+            await context.bot.send_message(
+                chat_id=user_id,
+                text=f"No recent transactions found for wallet `{wallet_address}` in the last 5 days.",
                 parse_mode="Markdown",
             )
             return
 
-        # Format the transactions
-        message_text = f"🔎 *Recent Transactions for Wallet*\n"
-        message_text += f"💼 `{wallet_address}`\n\n"
+        # Limit to the latest 5 transactions for brevity
+        latest_transactions = transactions[:5]
 
-        # Take up to 5 most recent transactions
-        count = 0
-        for tx in transactions[:5]:
-            count += 1
-            message_text += f"*Transaction #{count}*\n"
-            message_text += format_transaction_details(tx, wallet_address)
-            message_text += f"\n{'-' * 25}\n"
+        response_text = f"📜 *Recent Transactions for Wallet:* `{wallet_address}`\n\n"
+        for tx in latest_transactions:
+            # Ensure that only the transaction dictionary is passed
+            response_text += format_transaction_details(tx) + "\n---\n"
 
-        message_text += f"\n*Total transactions in past 24h:* {len(transactions)}"
-
-        # Create keyboard for the message
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "Refresh Transactions 🔄",
-                    callback_data=f"show_recent_tx_{wallet_address}",
+                    "Back to Wallet Info 🔙",
+                    callback_data=f"recent_tx_back_{wallet_address}",
                 )
-            ],
-            [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
+            ]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        # Update the message with transaction details
-        await context.bot.edit_message_text(
-            chat_id=user.id,
-            message_id=message.message_id,
-            text=message_text,
+        # Always send a new message for the transaction details
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=response_text,
             reply_markup=reply_markup,
             parse_mode="Markdown",
             disable_web_page_preview=True,
         )
 
     except Exception as e:
-        logger.error(
-            f"Error showing recent transactions for wallet {wallet_address}: {str(e)}"
-        )
-
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "Try Again 🔄", callback_data=f"show_recent_tx_{wallet_address}"
-                )
-            ],
-            [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-
-        await context.bot.edit_message_text(
-            chat_id=user.id,
-            message_id=message.message_id,
-            text=f"❌ Error fetching recent transactions for wallet `{wallet_address}`. Please try again.",
-            reply_markup=reply_markup,
+        logger.error(f"Error in show_recent_transactions for {wallet_address}: {e}")
+        await context.bot.send_message(
+            chat_id=user_id,
+            text=f"❌ Error fetching or displaying recent transactions for wallet `{wallet_address}`. Please try again later.",
             parse_mode="Markdown",
         )
 

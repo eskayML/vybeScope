@@ -16,8 +16,6 @@ from core.dashboard import (
     set_token_alert_threshold,
 )
 
-from .dashboard import get_whale_alerts_enabled, set_whale_alerts_enabled
-
 logger = logging.getLogger(__name__)
 
 
@@ -27,8 +25,7 @@ async def whale_alerts_command(update: Update, context: Application) -> None:
     message = update.callback_query.message if update.callback_query else update.message
     user_id = update.effective_user.id
 
-    # Get current toggle state
-    is_enabled = get_whale_alerts_enabled(user_id)
+    # Get tracked tokens and their settings
     tracked_tokens = get_tracked_whale_alert_tokens(user_id)
     token_settings = [
         (token, get_token_alert_settings(user_id, token)) for token in tracked_tokens
@@ -81,40 +78,6 @@ async def whale_alerts_command(update: Update, context: Application) -> None:
     )
 
 
-async def toggle_whale_alerts(update: Update, context: Application) -> None:
-    """Handles toggling whale alerts on/off with animation."""
-    query = update.callback_query
-    await query.answer()
-    user_id = update.effective_user.id
-
-    # Determine the new state from the callback data
-    new_state = query.data == "toggle_whale_on"
-    set_whale_alerts_enabled(user_id, new_state)
-
-    # Show animation with whale image
-    whale_image_path = os.path.join(
-        os.path.dirname(__file__), "..", "assets", "whale_pepe.jpeg"
-    )
-
-    if new_state:
-        # Send whale image and delete after a short delay
-        image_msg = await query.message.reply_photo(
-            photo=open(whale_image_path, "rb"), caption="🐳 Whale Alerts Activated! 🚀"
-        )
-        await whale_alerts_command(update, context)
-        time.sleep(3)
-        try:
-            await context.bot.delete_message(
-                chat_id=user_id, message_id=image_msg.message_id
-            )
-        except Exception as e:
-            logger.warning(f"Failed to delete whale alert image: {e}")
-        return
-
-    # Update the main menu
-    await whale_alerts_command(update, context)
-
-
 # Set threshold (triggered by button in whale_alerts_command)
 async def set_threshold_prompt(
     update: Update, context: Application, user_states: dict
@@ -143,73 +106,70 @@ async def whale_alert_job(application: Application):
     dashboard = _load_dashboard()
     for user_id, user_data in dashboard.items():
         whale_alert = user_data.get("whale_alert", {})
-        if whale_alert.get("enabled"):
-            tokens_dict = whale_alert.get("tokens", {})
-            for token_address, settings in tokens_dict.items():
-                if not settings.get("enabled", False):
+        tokens_dict = whale_alert.get("tokens", {})
+        for token_address, settings in tokens_dict.items():
+            if not settings.get("enabled", False):
+                continue
+            threshold = settings.get("threshold", 5)
+            try:
+                tx = fetch_whale_transaction_for_single_token(
+                    token_address, min_amount_usd=threshold
+                )
+                if not tx:
                     continue
-                threshold = settings.get("threshold", 5)
+                value_usd = tx.get("valueUsd", "0")
                 try:
-                    tx = fetch_whale_transaction_for_single_token(
-                        token_address, min_amount_usd=threshold
-                    )
-                    if not tx:
+                    if float(value_usd) < threshold:
                         continue
-                    value_usd = tx.get("valueUsd", "0")
-                    try:
-                        if float(value_usd) < threshold:
-                            continue
-                    except Exception:
-                        continue
-                    block_time = tx.get("blockTime")
-                    token_symbol = tx.get("tokenSymbol", "Unknown Token")
-                    token_address_display = token_address
-                    amount = tx.get("calculatedAmount") or tx.get("amount", "?")
-                    sender = tx.get("fromOwner", "Unknown")
-                    receiver = tx.get("toOwner", "Unknown")
-                    signature = tx.get("signature", "")
-                    solscan_url = f"https://solscan.io/tx/{signature}"
-                    alert_msg = (
-                        f"🐋💸 *Whale Alert!* 💸🐋\n\n"
-                        f"🪙 Token: *{token_symbol}*\n"
-                        f"🏷️ Address: `{token_address_display}`\n"
-                        f"💰 Amount: {amount} {token_symbol}\n"
-                        f"💵 Value: ${float(value_usd):,.2f}\n\n"
-                        f"👤 Sender: \n`{sender}`\n\n"
-                        f"👥 Receiver: \n`{receiver}`\n\n"
-                        f"🔗 [View on Solscan]({solscan_url})"
-                    )
-                    # Add inline buttons for this token (show threshold in button)
-                    alert_markup = InlineKeyboardMarkup(
+                except Exception:
+                    continue
+                block_time = tx.get("blockTime")
+                token_symbol = tx.get("tokenSymbol", "Unknown Token")
+                token_address_display = token_address
+                amount = tx.get("calculatedAmount") or tx.get("amount", "?")
+                sender = tx.get("fromOwner", "Unknown")
+                receiver = tx.get("toOwner", "Unknown")
+                signature = tx.get("signature", "")
+                solscan_url = f"https://solscan.io/tx/{signature}"
+                alert_msg = (
+                    f"🐋💸 *Whale Alert!* 💸🐋\n\n"
+                    f"🪙 Token: *{token_symbol}*\n"
+                    f"🏷️ Address: `{token_address_display}`\n"
+                    f"💰 Amount: {amount} {token_symbol}\n"
+                    f"💵 Value: ${float(value_usd):,.2f}\n\n"
+                    f"👤 Sender: \n`{sender}`\n\n"
+                    f"👥 Receiver: \n`{receiver}`\n\n"
+                    f"🔗 [View on Solscan]({solscan_url})"
+                )
+                # Add inline buttons for this token (show threshold in button)
+                alert_markup = InlineKeyboardMarkup(
+                    [
                         [
-                            [
-                                InlineKeyboardButton(
-                                    f"{'🔴 Disable' if settings.get('enabled', False) else '🟢 Enable'} {token_address[:4]}...",
-                                    callback_data=f"toggle_token_{'off' if settings.get('enabled', False) else 'on'}:{token_address}",
-                                ),
-                                InlineKeyboardButton(
-                                    f"Set Threshold (${settings.get('threshold', 0)})",
-                                    callback_data=f"change_threshold:{token_address}",
-                                ),
-                            ]
+                            InlineKeyboardButton(
+                                f"{'🔴 Disable' if settings.get('enabled', False) else '🟢 Enable'} {token_address[:4]}...",
+                                callback_data=f"toggle_token_{'off' if settings.get('enabled', False) else 'on'}:{token_address}",
+                            ),
+                            InlineKeyboardButton(
+                                f"Set Threshold (${settings.get('threshold', 0)})",
+                                callback_data=f"change_threshold:{token_address}",
+                            ),
                         ]
+                    ]
+                )
+                try:
+                    await application.bot.send_message(
+                        chat_id=user_id,
+                        text=alert_msg,
+                        parse_mode="Markdown",
+                        disable_web_page_preview=False,
+                        reply_markup=alert_markup,
                     )
-                    try:
-                        await application.bot.send_message(
-                            chat_id=user_id,
-                            text=alert_msg,
-                            parse_mode="Markdown",
-                            disable_web_page_preview=False,
-                            reply_markup=alert_markup,
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to send whale alert to user {user_id}: {e}"
-                        )
-                except BadRequest as e:
-                    logger.warning(f"Failed to send whale alert to user {user_id}: {e}")
                 except Exception as e:
-                    logger.error(f"Error in whale alert job for user {user_id}: {e}")
+                    logger.error(f"Failed to send whale alert to user {user_id}: {e}")
+            except BadRequest as e:
+                logger.warning(f"Failed to send whale alert to user {user_id}: {e}")
+            except Exception as e:
+                logger.error(f"Error in whale alert job for user {user_id}: {e}")
 
 
 # Handler for Track Whale Alerts button from token stats

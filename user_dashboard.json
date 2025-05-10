@@ -1,21 +1,16 @@
 {
   "6423826292": {
     "wallets": [
-      "2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy"
+      "HzsMcybwTDDEdAboNLo9TWT37s8WWuqjcdMGkQxbDuDn",
+      "J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah"
     ],
     "whale_alert": {
-      "enabled": true,
       "tokens": {
-        "hntyVP6YFm1Hg25TN9WGLqM12b8TQmcknKrdu1oxWux": {
+        "J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah": {
           "enabled": false,
-          "threshold": 20000.0
-        },
-        "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN": {
-          "enabled": false,
-          "threshold": 50000
+          "threshold": 2.0
         }
-      },
-      "threshold": 777.0
+      }
     }
   }
 }

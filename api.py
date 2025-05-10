@@ -23,17 +23,15 @@ def fetch_whale_transaction(min_amount_usd=50000):
     """Fetch whale transactions from Vybe API."""
     if min_amount_usd is None:
         min_amount_usd = 50000
-    
-    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS",300))
-    start_date = int((datetime.now() - timedelta(seconds = alert_intervals - 2 )).timestamp())
-    url = (
-        f"{BASE_URL}/token/transfers?startDate={start_date}"
+
+    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS", 300))
+    start_date = int(
+        (datetime.now() - timedelta(seconds=alert_intervals - 2)).timestamp()
     )
-    
-    
+    url = f"{BASE_URL}/token/transfers?startDate={start_date}"
+
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
-    
 
     transactions = response.json().get("transfers", [])
 
@@ -41,15 +39,17 @@ def fetch_whale_transaction(min_amount_usd=50000):
         return None
 
     # Get the top 10 transactions sorted by USD value
-    top_transactions = sorted(transactions, key=lambda x: float(x.get("valueUsd", 0)), reverse=True)[:10]
-    
+    top_transactions = sorted(
+        transactions, key=lambda x: float(x.get("valueUsd", 0)), reverse=True
+    )[:10]
+
     # Loop through each transaction to fetch the token symbol using mintAddress
     for transaction in top_transactions:
         mint_address = transaction.get("mintAddress")
         if mint_address:
             token_stats = fetch_token_stats(mint_address)
             transaction["tokenSymbol"] = token_stats.get("symbol", "SOL")
-    
+
     return top_transactions
 
 
@@ -57,18 +57,20 @@ def fetch_whale_transaction_for_single_token(
     mintAddress, min_amount_usd=50000, limit=1000
 ):
     """Fetch whale transactions from Vybe API for a single token and return the one with the maximum USD value."""
-    
+
     if min_amount_usd is None:
         min_amount_usd = 50000
-    
-    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS",300)) 
-    start_date = int((datetime.now() - timedelta(seconds = alert_intervals - 2 )).timestamp())
+
+    alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS", 300))
+    start_date = int(
+        (datetime.now() - timedelta(seconds=alert_intervals - 2)).timestamp()
+    )
 
     url = f"{BASE_URL}/token/transfers?mintAddress={mintAddress}&startDate={start_date}&limit={limit}"
     response = requests.get(url, headers=HEADERS)
     response.raise_for_status()
     transactions = response.json().get("transfers", [])
-    
+
     if not transactions:
         return None
 
@@ -81,14 +83,13 @@ def fetch_whale_transaction_for_single_token(
     return max_transaction
 
 
-
 def fetch_wallet_activity(wallet_address, startDate=None):
     """Fetch wallet activity for a wallet as both sender and receiver, sorted by most recent blockTime."""
     if startDate is None:
         startDate = int((datetime.now() - timedelta(days=5)).timestamp())
 
-    receiver_url = f"{BASE_URL}/token/transfers?receiverAddress={wallet_address}&timeStart={startDate}&limit=5"
-    sender_url = f"{BASE_URL}/token/transfers?senderAddress={wallet_address}&timeStart={startDate}&limit=5"
+    receiver_url = f"{BASE_URL}/token/transfers?receiverAddress={wallet_address}&timeStart={startDate}&limit=10"
+    sender_url = f"{BASE_URL}/token/transfers?senderAddress={wallet_address}&timeStart={startDate}&limit=10"
 
     receiver_response = requests.get(receiver_url, headers=HEADERS)
     sender_response = requests.get(sender_url, headers=HEADERS)
@@ -99,8 +100,12 @@ def fetch_wallet_activity(wallet_address, startDate=None):
     sender_data = sender_response.json().get("transfers", [])
 
     combined = receiver_data + sender_data
+    # Filter transactions by valueUsd > 0.01
+    filtered_transactions = [
+        tx for tx in combined if float(tx.get("valueUsd", 0)) > 0.01
+    ]
     combined_sorted = sorted(
-        combined, key=lambda x: x.get("blockTime", 0), reverse=True
+        filtered_transactions, key=lambda x: x.get("blockTime", 0), reverse=True
     )
     return combined_sorted
 
@@ -135,17 +140,17 @@ if __name__ == "__main__":
     # balance = get_wallet_token_balance("2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy")
     # print(balance)
 
-    # print("WALLET ACTIVITY")
-    # activity = fetch_wallet_activity("J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah")
-    # print(activity)
+    print("WALLET ACTIVITY")
+    activity = fetch_wallet_activity("J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah")
+    print(activity)
 
     # top_holders = fetch_top_token_holders("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
     # print(top_holders)
 
-    token_whales = fetch_whale_transaction_for_single_token(
-        "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
-    )
-    print(token_whales)
+    # token_whales = fetch_whale_transaction_for_single_token(
+    #     "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN"
+    # )
+    # print(token_whales)
 
     # print("WHALE TRANSACTION")
     # transactions = fetch_whale_transaction()

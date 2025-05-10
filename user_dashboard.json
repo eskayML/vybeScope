@@ -1,20 +1,10 @@
 {
   "6423826292": {
     "wallets": [
-      "HzsMcybwTDDEdAboNLo9TWT37s8WWuqjcdMGkQxbDuDn",
       "J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah"
     ],
     "whale_alert": {
-      "tokens": {
-        "J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah": {
-          "enabled": false,
-          "threshold": 2.0
-        },
-        "sfsf": {
-          "enabled": true,
-          "threshold": 50000
-        }
-      }
+      "tokens": {}
     }
   }
 }

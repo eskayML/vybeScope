@@ -109,6 +109,30 @@ def fetch_wallet_activity(wallet_address, startDate=None):
     )
     return combined_sorted
 
+def fetch_recent_wallet_transactions(wallet_address, seconds_ago=300):
+    """Fetch recent wallet transactions within the specified seconds."""
+    start_date = int((datetime.now() - timedelta(seconds=seconds_ago)).timestamp())
+
+    receiver_url = f"{BASE_URL}/token/transfers?receiverAddress={wallet_address}&timeStart={start_date}&limit=10"
+    sender_url = f"{BASE_URL}/token/transfers?senderAddress={wallet_address}&timeStart={start_date}&limit=10"
+
+    receiver_response = requests.get(receiver_url, headers=HEADERS)
+    sender_response = requests.get(sender_url, headers=HEADERS)
+    receiver_response.raise_for_status()
+    sender_response.raise_for_status()
+
+    receiver_data = receiver_response.json().get("transfers", [])
+    sender_data = sender_response.json().get("transfers", [])
+
+    combined = receiver_data + sender_data
+    # Filter transactions by valueUsd > 0.01
+    filtered_transactions = [
+        tx for tx in combined if float(tx.get("valueUsd", 0)) > 0.01
+    ]
+    combined_sorted = sorted(
+        filtered_transactions, key=lambda x: x.get("blockTime", 0), reverse=True
+    )
+    return combined_sorted
 
 def get_wallet_token_balance(owner_address):
     """Fetch token balances for a specific wallet address from Vybe API."""
@@ -140,10 +164,11 @@ if __name__ == "__main__":
     # balance = get_wallet_token_balance("2ZoLadbpbRmuvF3QZh5sQUBngfnA823CaFRMaNaw1kJy")
     # print(balance)
 
-    print("WALLET ACTIVITY")
-    activity = fetch_wallet_activity("J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah")
-    print(activity)
-
+    # print("WALLET ACTIVITY")
+    # activity = fetch_wallet_activity("J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah")
+    # print(activity)
+    recent = fetch_recent_wallet_transactions("J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah", seconds_ago=30000)
+    print(recent)
     # top_holders = fetch_top_token_holders("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
     # print(top_holders)
 
@@ -155,6 +180,8 @@ if __name__ == "__main__":
     # print("WHALE TRANSACTION")
     # transactions = fetch_whale_transaction()
     # print(transactions)
+    
+    
 
     # token_stats = fetch_token_stats("6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN")
     # print(token_stats)

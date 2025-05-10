@@ -41,6 +41,10 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
 I have also tested and validated the scheduled notification system for both whale alerts and wallet tracking.
 
 
+## Alert & Notification System
+
+VybeScope offers a comprehensive notification system to keep you updated on wallet activities and significant market movements:
+
 <table style="border-collapse: collapse; border: none; text-align: center; width: 100%;">
    <tr style="border: none; font-weight: bold;">
       <td style="border: none;">Feature</td>
@@ -49,16 +53,17 @@ I have also tested and validated the scheduled notification system for both whal
    </tr>
    <tr style="border: none;">
       <td style="border: none;">Wallet Transfer Alerts</td>
-      <td style="border: none;">Get notified when your tracked wallets send or receive funds</td>
-      <td style="border: none;"><img src="https://example.com/wallet-alert.png" alt="Wallet Alert Example" width="250"/></td>
+      <td style="border: none;">Receive instant notifications whenever your tracked wallets send or receive funds. The system monitors transactions in real-time and delivers detailed alerts showing transaction amount, token type, and wallet addresses involved. Customize tracking for multiple wallets simultaneously.</td>
+      <td style="border: none;"><img src="https://i.postimg.cc/HkQ8V3BY/wallet-tracking-demo.jpg" alt="Wallet Alert Example" width="250"/></td>
    </tr>
    <tr style="border: none;">
       <td style="border: none;">Whale Transaction Alerts</td>
-      <td style="border: none;">Configurable alerts for large market movements</td>
-      <td style="border: none;"><img src="https://example.com/whale-alert.png" alt="Whale Alert Example" width="250"/></td>
+      <td style="border: none;">Stay ahead of the market with customizable whale alerts. Set your own thresholds for transaction sizes to monitor large trades that could impact token prices. Each alert provides detailed information including transaction value, percentage of total supply moved, and links to explore the transaction further.</td>
+      <td style="border: none;"><img src="https://i.postimg.cc/0NPMmmBp/whale-alert-demo.jpg" alt="Whale Alert Example" width="250"/></td>
    </tr>
 </table>
 
+Both notification types operate on configurable intervals (default: 2 minutes), which you can adjust in the environment settings for your specific monitoring needs.
 
 ## Quick Start
 1. Clone the repo and install requirements:
@@ -72,7 +77,7 @@ I have also tested and validated the scheduled notification system for both whal
    pip install -r requirements.txt
    ```
 
-3. Create a `.env` file in the project root with the following content:
+3. Create a `.env` file in the project root with the following required variables:
    ```
    BOT_TOKEN=your_telegram_bot_token_here
    VYBE_API_KEY=your_vybe_api_key_here
@@ -95,18 +100,17 @@ I have also tested and validated the scheduled notification system for both whal
 
 
 
-## Implementation Details
+## Notable Details
 
 This bot is designed to be lightweight and portable:
 
 - Uses in-memory storage for user data, wallets, and transactions
-- No database dependencies required
 - Communicates with the Vybe API for blockchain data
 - Simple to deploy and run
 
 ## Hackathon Submission
 
-This project is a submission for the Vybe Telegram Bot Challenge. The goal is to create an intuitive and feature-rich Telegram bot that integrates with cryptocurrency wallets and provides a seamless user experience.
+This project is a submission for the Vybe Telegram Bot Challenge. The goal is to create an intuitive and feature-rich Telegram bot that integrates with cryptocurrency wallets/tokens and provides a seamless user experience.
 
 ## License
 

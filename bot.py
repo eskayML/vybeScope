@@ -55,6 +55,12 @@ class VybeScopeBot:
         if not self.TELEGRAM_TOKEN:
             raise ValueError("TELEGRAM_TOKEN not found in environment variables.")
         self.VYBE_API_KEY = os.getenv("VYBE_API_KEY")
+        self.WHALE_ALERT_INTERVAL_SECONDS = int(
+            os.getenv("WHALE_ALERT_INTERVAL_SECONDS", 120)
+        )
+        self.WALLET_TRACKING_INTERVAL_SECONDS = int(
+            os.getenv("WALLET_TRACKING_INTERVAL_SECONDS", 120)
+        )
         self.user_thresholds = {}
         self.user_states = {}
         self.logger = logging.getLogger(__name__)
@@ -541,19 +547,19 @@ class VybeScopeBot:
             await self.dashboard_command(update, context)
         elif callback_data == "quick_commands":
             quick_commands_msg = (
-                "*Quick Commands & Features*\n\n"
-                "• /start – Start or restart the Vybe Bot and see the main menu.\n"
-                "• /threshold – Set or view your whale alert threshold.\n"
-                "• /token <token_address> – Get stats and info for a specific token.\n"
-                "• /wallet <wallet_address> – Track or view activity for a wallet.\n"
-                "• /whalealerts – Manage whale alert notifications and settings.\n"
-                "• /check – Instantly check the highest whale transaction.\n"
-                "• /dashboard – View your personal dashboard and tracked data.\n"
-                "• /agent – Open the Research Agent mini app.\n\n"
-                "*Other Features:*\n"
-                "• Use the interactive buttons in the chat for quick actions (toggle alerts, set thresholds, etc).\n"
-                "• Send a wallet or token address directly to get instant info.\n"
-                "• The bot responds to plain text queries for supported operations.\n"
+                "*⚡ Quick Commands & Features*\n\n"
+                "Use these commands for quick access to features:\n\n"
+                "*/start* – Show main menu & restart the bot.\n"
+                "*/dashboard* – View your personal dashboard (tracked wallets & whale alert settings).\n"
+                "*/wallet <address>* – Add a new wallet to track or view an existing tracked wallet.\n"
+                "*/token <address>* – Get statistics and information for a specific Solana token.\n"
+                "*/whalealerts* – Manage whale alert notifications, add/remove tokens, set thresholds, and toggle alerts.\n"
+                "*/check* – Instantly check the highest whale transaction based on your current settings.\n"
+                "*/agent* – Open the Research Agent mini app for advanced AI analytics.\n\n"
+                "*💡 Other Tips:*\n"
+                "• Use the interactive buttons in chat for most actions.\n"
+                "• Directly send a wallet or token address to the bot for quick info.\n"
+                "• The bot guides you with prompts for most operations."
             )
 
             close_markup = InlineKeyboardMarkup(
@@ -770,10 +776,10 @@ class VybeScopeBot:
         # Use Telegram's JobQueue to schedule whale alerts
 
         self.application.job_queue.run_repeating(
-            whale_alert_job, interval=60, first=10, name="whale_alert_job"
+            whale_alert_job, interval=self.WHALE_ALERT_INTERVAL_SECONDS, first=10, name="whale_alert_job"
         )
         self.application.job_queue.run_repeating(
-            wallet_tracking_job, interval=60, first=25, name="wallet_tracking_job"
+            wallet_tracking_job, interval=self.WALLET_TRACKING_INTERVAL_SECONDS, first=25, name="wallet_tracking_job"
         )
 
         self.logger.info("Starting bot polling...")

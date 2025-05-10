@@ -554,7 +554,6 @@ class VybeScopeBot:
                 "*/wallet <address>* – Add a new wallet to track or view an existing tracked wallet.\n"
                 "*/token <address>* – Get statistics and information for a specific Solana token.\n"
                 "*/whalealerts* – Manage whale alert notifications, add/remove tokens, set thresholds, and toggle alerts.\n"
-                "*/check* – Instantly check the highest whale transaction based on your current settings.\n"
                 "*/agent* – Open the Research Agent mini app for advanced AI analytics.\n\n"
                 "*💡 Other Tips:*\n"
                 "• Use the interactive buttons in chat for most actions.\n"
@@ -743,7 +742,6 @@ class VybeScopeBot:
                 BotCommand("token", "Get stats for a Solana token"),
                 BotCommand("whalealerts", "Manage whale alert notifications"),
                 BotCommand("threshold", "Set your whale alert threshold"),
-                BotCommand("check", "Check the highest whale transaction now"),
                 BotCommand("agent", "Open the Research Agent mini app"),
             ]
             await self.application.bot.set_my_commands(commands)
@@ -759,7 +757,6 @@ class VybeScopeBot:
         self.application.add_handler(
             CommandHandler("whalealerts", whale_alerts_command)
         )
-        self.application.add_handler(CommandHandler("check", self.check_command))
         self.application.add_handler(
             CommandHandler("dashboard", self.dashboard_command)
         )
@@ -779,7 +776,7 @@ class VybeScopeBot:
             whale_alert_job, interval=self.WHALE_ALERT_INTERVAL_SECONDS, first=10, name="whale_alert_job"
         )
         self.application.job_queue.run_repeating(
-            wallet_tracking_job, interval=self.WALLET_TRACKING_INTERVAL_SECONDS, first=25, name="wallet_tracking_job"
+            wallet_tracking_job, interval=self.WALLET_TRACKING_INTERVAL_SECONDS, first=30, name="wallet_tracking_job"
         )
 
         self.logger.info("Starting bot polling...")

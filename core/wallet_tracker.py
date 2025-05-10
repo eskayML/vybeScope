@@ -1,5 +1,6 @@
 import logging
 import re
+import os
 import time
 from datetime import datetime, timedelta
 
@@ -14,6 +15,9 @@ from .dashboard import _load_dashboard, add_tracked_wallet
 from .utils import format_transaction_details
 
 logger = logging.getLogger(__name__)
+
+
+WALLET_TRACKING_INTERVAL_SECONDS = int ( os.getenv('WALLET_TRACKING_INTERVAL_SECONDS', 120))
 
 # Dictionary to store the latest transaction timestamp for each wallet
 last_transaction_times = {}
@@ -322,8 +326,8 @@ async def check_recent_transactions(wallet_address, user_id, application):
         application (Application): The telegram bot application object
     """
     try:
-        # Calculate startDate as 60 seconds ago in unix timestamp
-        start_date = int((datetime.now() - timedelta(seconds=60)).timestamp())
+    
+        start_date = int((datetime.now() - timedelta(seconds=WALLET_TRACKING_INTERVAL_SECONDS)).timestamp())
 
         # Get the last known transaction time for this wallet, or initialize it
         global last_transaction_times
@@ -358,42 +362,42 @@ async def check_recent_transactions(wallet_address, user_id, application):
         # If we have new transactions, notify the user
         if new_transactions:
             logger.info(
-                f"Found {len(new_transactions)} new transactions for wallet {wallet_address}"
+                f"Found {len(new_transactions)} new transactions for wallet {wallet_address}, processing the first one."
             )
 
-            # Send notification for each new transaction
-            for tx in new_transactions:
-                tx_formatted = format_transaction_details(tx, wallet_address)
+            # Process only the first new transaction
+            first_tx = new_transactions[0]
+            tx_formatted = format_transaction_details(first_tx, wallet_address)
 
-                # Create message text
-                message = "🚨 *New Transaction Detected!*\n\n"
-                message += f"💼 *Wallet:* `{wallet_address}`\n\n"
-                message += tx_formatted
+            # Create message text
+            message = "🚨 *New Transaction Detected!*\n\n"
+            message += f"💼 *Wallet:* `{wallet_address}`\n\n"
+            message += tx_formatted
 
-                # Create keyboard for the message
-                keyboard = [
-                    [
-                        InlineKeyboardButton(
-                            "Remove Wallet 🗑️",
-                            callback_data=f"remove_wallet_{wallet_address}",
-                        )
-                    ],
-                    [
-                        InlineKeyboardButton(
-                            "Back to Main Menu 🔙", callback_data="start"
-                        )
-                    ],
-                ]
-                reply_markup = InlineKeyboardMarkup(keyboard)
+            # Create keyboard for the message
+            keyboard = [
+                [
+                    InlineKeyboardButton(
+                        "Remove Wallet 🗑️",
+                        callback_data=f"remove_wallet_{wallet_address}",
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        "Back to Main Menu 🔙", callback_data="start"
+                    )
+                ],
+            ]
+            reply_markup = InlineKeyboardMarkup(keyboard)
 
-                # Send the notification
-                await application.bot.send_message(
-                    chat_id=user_id,
-                    text=message,
-                    reply_markup=reply_markup,
-                    parse_mode="Markdown",
-                    disable_web_page_preview=True,
-                )
+            # Send the notification
+            await application.bot.send_message(
+                chat_id=user_id,
+                text=message,
+                reply_markup=reply_markup,
+                parse_mode="Markdown",
+                disable_web_page_preview=True,
+            )
     except Exception as e:
         logger.error(
             f"Error checking recent transactions for wallet {wallet_address}: {str(e)}"

@@ -84,5 +84,5 @@ def format_transaction_details(tx: dict, wallet_address: str) -> str:
         f"⏰ *Time:* {formatted_time}\n"
         f"💰 *Value (USD):* {formatted_value}\n"
         f"{transaction_perspective}"  # Use the new perspective string
-        f"🔗 *Signature:* [{signature[:8]}...{signature[-8:]}]({explorer_link})\n"
+        f"🔗 *Solscan:* [{signature[:8]}...{signature[-8:]}]({explorer_link})\n"
     )

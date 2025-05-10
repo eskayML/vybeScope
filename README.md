@@ -108,6 +108,10 @@ This bot is designed to be lightweight and portable:
 - Communicates with the Vybe API for blockchain data
 - Simple to deploy and run
 
+### Bonus
+I added available quick commands to augment the already rich User Interface for quick and easy access to different features
+
+
 ## Hackathon Submission
 
 This project is a submission for the Vybe Telegram Bot Challenge. The goal is to create an intuitive and feature-rich Telegram bot that integrates with cryptocurrency wallets/tokens and provides a seamless user experience.

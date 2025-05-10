@@ -363,7 +363,7 @@ async def check_recent_transactions(wallet_address, user_id, application):
 
             # Send notification for each new transaction
             for tx in new_transactions:
-                tx_formatted = format_transaction_details(tx, wallet_address)
+                tx_formatted = format_transaction_details(tx)
 
                 # Create message text
                 message = "🚨 *New Transaction Detected!*\n\n"

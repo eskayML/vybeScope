@@ -33,7 +33,7 @@ from core.token_stats import token_prompt as core_token_prompt  # Rename to avoi
 from core.wallet_tracker import (
     process_wallet,
     show_recent_transactions,
-    start_wallet_tracker_scheduler,
+    wallet_tracking_job,  # Import job directly
 )
 from core.wallet_tracker import (
     wallet_prompt as core_wallet_prompt,  # Rename to avoid clash
@@ -41,7 +41,10 @@ from core.wallet_tracker import (
 from core.whale_alerts import (
     set_threshold_prompt as core_set_threshold_prompt,  # Rename to avoid clash
 )
-from core.whale_alerts import whale_alert_job, whale_alerts_command
+from core.whale_alerts import (  # Import job directly
+    whale_alert_job,
+    whale_alerts_command,
+)
 
 
 class VybeScopeBot:
@@ -49,6 +52,8 @@ class VybeScopeBot:
         # Load environment variables
         load_dotenv()
         self.TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+        if not self.TELEGRAM_TOKEN:
+            raise ValueError("TELEGRAM_TOKEN not found in environment variables.")
         self.VYBE_API_KEY = os.getenv("VYBE_API_KEY")
         self.user_thresholds = {}
         self.user_states = {}
@@ -58,7 +63,6 @@ class VybeScopeBot:
             level=logging.INFO,
         )
         self.application = None
-        self.scheduler = None
 
     async def start(self, update: Update, context: Application) -> None:
         """Sends the welcome message and main menu."""
@@ -285,7 +289,7 @@ class VybeScopeBot:
                 ],
                 [
                     InlineKeyboardButton(
-                        "Whale Alert Options 🐋", callback_data="whale_alerts"
+                        "Whale Alert Options ⚙", callback_data="whale_alerts"
                     ),
                     InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
                 ],
@@ -751,27 +755,17 @@ class VybeScopeBot:
 
         # Use Telegram's JobQueue to schedule whale alerts
 
-        alert_intervals = int(os.getenv("WHALE_ALERT_INTERVAL_SECONDS", 300))
         self.application.job_queue.run_repeating(
-            whale_alert_job,
-            interval=alert_intervals,
-            first=0,
-            name="whale_alert_job",
-            data=self.application,
+            whale_alert_job, interval=60, first=10, name="whale_alert_job"
         )
-
-        # Start the wallet transaction tracking scheduler
-        self.wallet_tracker_thread = start_wallet_tracker_scheduler(self.application)
-        self.logger.info("Wallet transaction tracking scheduler started")
+        self.application.job_queue.run_repeating(
+            wallet_tracking_job, interval=60, first=25, name="wallet_tracking_job"
+        )
 
         self.logger.info("Starting bot polling...")
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
-def main():
-    app = VybeScopeBot()
-    app.run()
-
-
 if __name__ == "__main__":
-    main()
+    bot = VybeScopeBot()
+    bot.run()

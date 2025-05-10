@@ -17,6 +17,17 @@ def format_transaction_details(tx: dict) -> str:
             f"${tx.get('valueUsd', 'N/A')}"  # Fallback if conversion fails
         )
 
+    # Parse block time if available
+    block_time = tx.get("blockTime")
+    formatted_time = "N/A"
+    if block_time:
+        try:
+            # Convert blockTime (usually Unix timestamp) to datetime
+            dt = datetime.fromtimestamp(block_time)
+            formatted_time = dt.strftime("%Y-%m-%d %H:%M:%S")
+        except (TypeError, ValueError):
+            formatted_time = "N/A"
+
     # Safely get other fields with fallbacks
     signature = tx.get("signature", "N/A")
     sender = tx.get("senderAddress", "N/A")
@@ -33,6 +44,7 @@ def format_transaction_details(tx: dict) -> str:
     amount_display = f"{amount_str} {symbol}" if amount_str != "N/A" else "N/A"
 
     return (
+        f"⏰ *Time:* {formatted_time}\n"
         f"💰 *Value (USD):* {formatted_value}\n"
         f"📊 *Amount:* {amount_display}\n"
         f"🔗 *Signature:* [{signature[:8]}...{signature[-8:]}]({explorer_link})\n"

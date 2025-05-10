@@ -7,14 +7,12 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest
 from telegram.ext import Application
 
-from api import fetch_whale_transaction, fetch_whale_transaction_for_single_token
+from api import fetch_whale_transaction_for_single_token  # Modified
 from core.dashboard import (
     _load_dashboard,
     add_tracked_whale_alert_token,
     get_token_alert_settings,
     get_tracked_whale_alert_tokens,
-    set_token_alert_enabled,
-    set_token_alert_threshold,
 )
 
 logger = logging.getLogger(__name__)
@@ -124,12 +122,11 @@ async def whale_alert_job(application: Application):
                         continue
                 except Exception:
                     continue
-                block_time = tx.get("blockTime")
                 token_symbol = tx.get("tokenSymbol", "Unknown Token")
                 token_address_display = token_address
                 amount = tx.get("calculatedAmount") or tx.get("amount", "?")
-                sender = tx.get("fromOwner", "Unknown")
-                receiver = tx.get("toOwner", "Unknown")
+                sender = tx.get("senderAddress", "Unknown")
+                receiver = tx.get("receiverAddress", "Unknown")
                 signature = tx.get("signature", "")
                 solscan_url = f"https://solscan.io/tx/{signature}"
                 alert_msg = (
@@ -204,7 +201,7 @@ async def track_token_whale_alert(update: Update, context: Application) -> None:
         )
         image_msg = await query.message.reply_photo(
             photo=open(whale_image_path, "rb"),
-            caption=f"🐳 Token added to Whale Alerts! 🚀\n\nYou'll now receive alerts for large transactions of this token.",
+            caption="🐳 Token added to Whale Alerts! 🚀\n\nYou'll now receive alerts for large transactions of this token.",
         )
 
         # Show the whale alerts screen with the updated token
@@ -220,6 +217,6 @@ async def track_token_whale_alert(update: Update, context: Application) -> None:
             logger.warning(f"Failed to delete whale alert image: {e}")
     else:
         await query.message.reply_text(
-            f"This token is already in your whale alerts! 🐳\n"
+            "This token is already in your whale alerts! 🐳\n"
         )
         await whale_alerts_command(update, context)

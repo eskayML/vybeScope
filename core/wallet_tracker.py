@@ -1,9 +1,7 @@
-import asyncio
 import logging
 import re
 import time
 from datetime import datetime, timedelta
-from threading import Thread
 
 import requests
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -164,12 +162,6 @@ async def process_wallet(
                 amount_str = token.get("amount", "0")
                 value_usd_str = token.get("valueUsd", "0")
                 price_usd_str = token.get("priceUsd", "N/A")
-                price_change_1d_str = token.get(
-                    "priceUsd1dChange", "N/A"
-                )  # Percentage change
-                value_change_1d_str = token.get(
-                    "valueUsd1dChange", "N/A"
-                )  # Absolute change
 
                 # Initialize formatted strings
                 amount_formatted = amount_str  # Fallback
@@ -212,15 +204,13 @@ async def process_wallet(
 
                 # Format price change (percentage)
                 try:
-                    price_change_1d = (
-                        float(price_change_1d_str) * 100
-                    )  # API gives decimal, convert to %
+                    pass  # Placeholder if no other logic was here
                 except (ValueError, TypeError):
                     pass  # Keep fallback
 
                 # Format value change (absolute)
                 try:
-                    value_change_1d = float(value_change_1d_str)
+                    pass  # Placeholder if no other logic was here
                 except (ValueError, TypeError):
                     pass  # Keep fallback
 
@@ -469,8 +459,8 @@ async def show_recent_transactions(
 
 async def wallet_tracking_job(application):
     """
-    Check for recent transactions for all tracked wallets every 60 seconds.
-    This function is meant to be called periodically by a scheduler.
+    Check for recent transactions for all tracked wallets.
+    This function is meant to be called periodically by the job queue in bot.py.
     """
     try:
         # Load the dashboard data to get all tracked wallets
@@ -485,32 +475,3 @@ async def wallet_tracking_job(application):
                 )
     except Exception as e:
         logger.error(f"Error in wallet tracking job: {str(e)}")
-
-
-def start_wallet_tracker_scheduler(application):
-    """
-    Start the wallet tracker scheduler that runs every 60 seconds.
-    Should be called when the bot starts.
-    """
-
-    async def scheduler_loop():
-        while True:
-            try:
-                await wallet_tracking_job(application)
-            except Exception as e:
-                logger.error(f"Error in wallet tracking scheduler loop: {str(e)}")
-            # Wait for 60 seconds before the next check
-            await asyncio.sleep(60)
-
-    # Start the scheduler in a background task
-    def run_async_loop():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        loop.run_until_complete(scheduler_loop())
-
-    # Start the scheduler in a background thread
-    thread = Thread(target=run_async_loop, daemon=True)
-    thread.start()
-    logger.info("Wallet tracker scheduler started")
-
-    return thread

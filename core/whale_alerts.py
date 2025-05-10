@@ -1,5 +1,6 @@
 import logging
 import os
+import re  # Added import
 import time
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -182,6 +183,15 @@ async def track_token_whale_alert(update: Update, context: Application) -> None:
     # Extract token address from callback data
     # Format is "track_whale_alert_{token_address}"
     token_address = query.data.replace("track_whale_alert_", "")
+
+    # Basic validation for Solana token address
+    if not re.match(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$", token_address):
+        await query.message.reply_text(
+            "❌ Invalid Solana token address format. Please ensure it is a valid address."
+        )
+        # Optionally, reshow the whale alerts command or a try again button
+        await whale_alerts_command(update, context)
+        return
 
     # Add the token to whale alerts with default settings
     added = add_tracked_whale_alert_token(user_id, token_address)

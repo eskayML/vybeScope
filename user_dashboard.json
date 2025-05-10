@@ -9,6 +9,10 @@
         "J7tQpK2sQE1xknVmYbjPDg4kcThK1NHXQ3kZrSAuBrah": {
           "enabled": false,
           "threshold": 2.0
+        },
+        "sfsf": {
+          "enabled": true,
+          "threshold": 50000
         }
       }
     }

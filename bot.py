@@ -413,6 +413,16 @@ class VybeScopeBot:
         elif state == "dashboard_awaiting_add_whale_alert":
             from core.dashboard import add_tracked_whale_alert_token
 
+            # Validate token address format before processing
+            if not re.match(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$", text):
+                await update.message.reply_text(
+                    "❌ Invalid Solana token address format. Please ensure it is a valid Solana address (e.g., So1111... or similar)."
+                )
+                self.user_states[user_id] = (
+                    "dashboard_awaiting_add_whale_alert"  # Keep user in the same state
+                )
+                return
+
             added = add_tracked_whale_alert_token(user_id, text)
             if added:
                 await update.message.reply_text(

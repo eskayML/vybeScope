@@ -1,6 +1,6 @@
 import logging
-import re
 import os
+import re
 import time
 from datetime import datetime, timedelta
 
@@ -17,7 +17,9 @@ from .utils import format_transaction_details
 logger = logging.getLogger(__name__)
 
 
-WALLET_TRACKING_INTERVAL_SECONDS = int ( os.getenv('WALLET_TRACKING_INTERVAL_SECONDS', 120))
+WALLET_TRACKING_INTERVAL_SECONDS = int(
+    os.getenv("WALLET_TRACKING_INTERVAL_SECONDS", 120)
+)
 
 # Dictionary to store the latest transaction timestamp for each wallet
 last_transaction_times = {}
@@ -326,8 +328,11 @@ async def check_recent_transactions(wallet_address, user_id, application):
         application (Application): The telegram bot application object
     """
     try:
-    
-        start_date = int((datetime.now() - timedelta(seconds=WALLET_TRACKING_INTERVAL_SECONDS)).timestamp())
+        start_date = int(
+            (
+                datetime.now() - timedelta(seconds=WALLET_TRACKING_INTERVAL_SECONDS)
+            ).timestamp()
+        )
 
         # Get the last known transaction time for this wallet, or initialize it
         global last_transaction_times
@@ -382,11 +387,7 @@ async def check_recent_transactions(wallet_address, user_id, application):
                         callback_data=f"remove_wallet_{wallet_address}",
                     )
                 ],
-                [
-                    InlineKeyboardButton(
-                        "Back to Main Menu 🔙", callback_data="start"
-                    )
-                ],
+                [InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start")],
             ]
             reply_markup = InlineKeyboardMarkup(keyboard)
 

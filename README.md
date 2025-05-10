@@ -37,6 +37,28 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
 - 🔔 Real-time notifications for whale alerts and Tracked Wallet Transactions
 - 🤖 Research Agent Telegram Mini App (For advanced AI analytics and research.) 
 
+# Notification System
+I have also tested and validated the scheduled notification system for both whale alerts and wallet tracking.
+
+
+<table style="border-collapse: collapse; border: none; text-align: center; width: 100%;">
+   <tr style="border: none; font-weight: bold;">
+      <td style="border: none;">Feature</td>
+      <td style="border: none;">Description</td>
+      <td style="border: none;">Demo</td>
+   </tr>
+   <tr style="border: none;">
+      <td style="border: none;">Wallet Transfer Alerts</td>
+      <td style="border: none;">Get notified when your tracked wallets send or receive funds</td>
+      <td style="border: none;"><img src="https://example.com/wallet-alert.png" alt="Wallet Alert Example" width="250"/></td>
+   </tr>
+   <tr style="border: none;">
+      <td style="border: none;">Whale Transaction Alerts</td>
+      <td style="border: none;">Configurable alerts for large market movements</td>
+      <td style="border: none;"><img src="https://example.com/whale-alert.png" alt="Whale Alert Example" width="250"/></td>
+   </tr>
+</table>
+
 
 ## Quick Start
 1. Clone the repo and install requirements:
@@ -59,8 +81,11 @@ VybeScope is ideal for traders, investors, and enthusiasts who want actionable S
    Some optional env parameters you could also include are
 
    ```
-   WHALE_ALERT_INTERVAL_SECONDS = 300 
-   # not adding this env variable leaves the default value in the code at 300 (5 minutes)
+   WHALE_ALERT_INTERVAL_SECONDS = 120 
+   # not adding this env variable leaves the default value in the code at 120 (2 minutes)
+
+   WALLET_TRACKING_INTERVAL_SECONDS = 120
+   # likewise not adding this env variable leaves the default value as 120 (2 minutes)
    ```
 
 4. Start the bot:

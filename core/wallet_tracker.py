@@ -227,8 +227,8 @@ async def process_wallet(
         keyboard = [
             [
                 InlineKeyboardButton(
-                    "Show Recent Transactions",
-                    callback_data=f"show_recent_tx_{wallet_address}",
+                    "Remove Wallet 🗑️",
+                    callback_data=f"remove_wallet_{wallet_address}",
                 )
             ],
             [
@@ -363,7 +363,7 @@ async def check_recent_transactions(wallet_address, user_id, application):
 
             # Send notification for each new transaction
             for tx in new_transactions:
-                tx_formatted = format_transaction_details(tx)
+                tx_formatted = format_transaction_details(tx, wallet_address)
 
                 # Create message text
                 message = "🚨 *New Transaction Detected!*\n\n"
@@ -374,8 +374,8 @@ async def check_recent_transactions(wallet_address, user_id, application):
                 keyboard = [
                     [
                         InlineKeyboardButton(
-                            "Show All Recent Transactions",
-                            callback_data=f"show_recent_tx_{wallet_address}",
+                            "Remove Wallet 🗑️",
+                            callback_data=f"remove_wallet_{wallet_address}",
                         )
                     ],
                     [
@@ -427,7 +427,7 @@ async def show_recent_transactions(
         response_text = f"📜 *Recent Transactions for Wallet:* `{wallet_address}`\n\n"
         for tx in latest_transactions:
             # Ensure that only the transaction dictionary is passed
-            response_text += format_transaction_details(tx) + "\n---\n"
+            response_text += format_transaction_details(tx, wallet_address) + "\n---\n"
 
         keyboard = [
             [

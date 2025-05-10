@@ -588,6 +588,20 @@ class VybeScopeBot:
             wallet_address = callback_data.replace("show_recent_tx_", "")
             # Call our new function to show recent transactions
             await show_recent_transactions(update, context, wallet_address)
+        elif callback_data.startswith("remove_wallet_"):
+            wallet_address = callback_data.replace("remove_wallet_", "")
+            removed = remove_tracked_wallet(user_id, wallet_address)
+            if removed:
+                await query.message.reply_text(
+                    f"✅ Wallet `{wallet_address}` removed from your dashboard!",
+                    parse_mode="Markdown",
+                )
+            else:
+                await query.message.reply_text(
+                    f"❌ Wallet `{wallet_address}` was not found in your dashboard.",
+                    parse_mode="Markdown",
+                )
+            await self.dashboard_command(update, context)  # Show updated dashboard
         elif callback_data.startswith("recent_tx_back_"):
             try:
                 await query.message.delete()

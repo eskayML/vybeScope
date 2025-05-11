@@ -59,14 +59,14 @@ I have also tested and validated the scheduled notification system for both whal
 
 Both notification types operate on configurable intervals (default: 2 minutes), which you can adjust in the environment settings for your specific monitoring needs.
 
-## Quick Start
+## Quick Start & Local Setup
 1. Clone the repo and install requirements:
    ```
    git clone https://github.com/eskayML/vybeScope
    cd vybescope
    ```
 
-2. Install dependencies:
+2. Install dependencies (use a virtual environment preferably):
    ```
    pip install -r requirements.txt
    ```
@@ -92,19 +92,39 @@ Both notification types operate on configurable intervals (default: 2 minutes), 
    python bot.py
    ```
 
+### Novel Feature - LLM Research Agent 🤖
+An Embedded Telegram Mini Application Has full fledged conversation ability , and can communicate about most information relating to solana and the vybe ecosystem.
+![RESEARCH AGENT DEMO](https://i.ibb.co/zH0gGv7M/Whats-App-Image-2025-05-11-at-00-59-42-6d777cd9.jpg)
 
 
-## Notable Details
+### Bonus - ⚡ Quick Commands & Features
+I added available quick commands to augment the already rich User Interface for quick and easy access to different features
+
+Use these commands for quick access to features:
+
+- **/start** – Show main menu & restart the bot
+- **/dashboard** – View your personal dashboard (tracked wallets & whale alert settings)
+- **/wallet** `<address>` – Add a new wallet to track or view an existing tracked wallet
+- **/token** `<address>` – Get statistics and information for a specific Solana token
+- **/whalealerts** – Manage whale alert notifications, add/remove tokens, set thresholds, and toggle alerts
+- **/agent** – Open the Research Agent mini app for advanced AI analytics
+
+
+### 💡 Other Tips:
+
+- Use the interactive buttons in chat for most actions
+- Directly send a wallet or token address to the bot for quick info
+- The bot guides you with prompts for most operations
+
+
+
+### Notable Details
 
 This bot is designed to be lightweight and portable:
 
 - Uses in-memory storage for user data, wallets, and transactions
 - Communicates with the Vybe API for blockchain data
 - Simple to deploy and run
-
-### Bonus
-I added available quick commands to augment the already rich User Interface for quick and easy access to different features
-
 
 ## Hackathon Submission
 

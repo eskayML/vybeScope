@@ -741,7 +741,6 @@ class VybeScopeBot:
                 BotCommand("wallet", "Track or view a wallet's activity"),
                 BotCommand("token", "Get stats for a Solana token"),
                 BotCommand("whalealerts", "Manage whale alert notifications"),
-                BotCommand("threshold", "Set your whale alert threshold"),
                 BotCommand("agent", "Open the Research Agent mini app"),
             ]
             await self.application.bot.set_my_commands(commands)
@@ -749,9 +748,6 @@ class VybeScopeBot:
         asyncio.get_event_loop().run_until_complete(set_bot_commands())
 
         self.application.add_handler(CommandHandler("start", self.start))
-        self.application.add_handler(
-            CommandHandler("threshold", self.threshold_command)
-        )
         self.application.add_handler(CommandHandler("token", self.token_command))
         self.application.add_handler(CommandHandler("wallet", self.wallet_command))
         self.application.add_handler(

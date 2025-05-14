@@ -3,13 +3,13 @@
     "wallets": [],
     "whale_alert": {
       "tokens": {
-        "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm": {
-          "enabled": false,
+        "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263": {
+          "enabled": true,
           "threshold": 50000
         },
-        "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263": {
-          "enabled": false,
-          "threshold": 20.0
+        "jtojtomepa8beP8AuQc6eXt5FriJwfFMwQx2v2f9mCL": {
+          "enabled": true,
+          "threshold": 50000
         }
       }
     }

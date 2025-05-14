@@ -767,19 +767,18 @@ class VybeScopeBot:
         self.application.add_error_handler(self.error_handler)
 
         # Use Telegram's JobQueue to schedule whale alerts
-
-        self.application.job_queue.run_repeating(
-            whale_alert_job,
-            interval=self.WHALE_ALERT_INTERVAL_SECONDS,
-            first=10,
-            name="whale_alert_job",
-        )
         self.application.job_queue.run_repeating(
             wallet_tracking_job,
             interval=self.WALLET_TRACKING_INTERVAL_SECONDS,
-            first=30,
             name="wallet_tracking_job",
         )
+        
+        self.application.job_queue.run_repeating(
+            whale_alert_job,
+            interval=self.WHALE_ALERT_INTERVAL_SECONDS,
+            name="whale_alert_job",
+        )
+        
 
         self.logger.info("Starting bot polling...")
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)

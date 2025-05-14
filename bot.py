@@ -416,20 +416,31 @@ class VybeScopeBot:
             # messages are sent by process_wallet, and the state is considered handled.
 
         elif state == "dashboard_awaiting_add_wallet":
-            status = await process_wallet(user_id, text, context) # process_wallet calls add_tracked_wallet
+            status = await process_wallet(
+                user_id, text, context
+            )  # process_wallet calls add_tracked_wallet
             if status == "validation_error":
                 await update.message.reply_text(
                     "❌ Invalid Solana wallet address format. Please ensure it is a valid Solana address (e.g., 3qArN...)."
                 )
-                await update.message.reply_text("💼 Please enter a valid wallet address to add:")
+                await update.message.reply_text(
+                    "💼 Please enter a valid wallet address to add:"
+                )
                 self.user_states[user_id] = "dashboard_awaiting_add_wallet"
             elif status == "empty_input":
                 await update.message.reply_text(
                     "❌ Wallet address cannot be empty! Please enter a valid Solana address."
                 )
-                await update.message.reply_text("💼 Please enter a valid wallet address to add:")
+                await update.message.reply_text(
+                    "💼 Please enter a valid wallet address to add:"
+                )
                 self.user_states[user_id] = "dashboard_awaiting_add_wallet"
-            elif status in ["processed_successfully", "processed_successfully_no_tokens", "processing_failed_api", "processing_failed_unexpected"]:
+            elif status in [
+                "processed_successfully",
+                "processed_successfully_no_tokens",
+                "processing_failed_api",
+                "processing_failed_unexpected",
+            ]:
                 # process_wallet sent its message (success or API error).
                 # Now, show the dashboard.
                 await self.dashboard_command(update, context)
@@ -799,13 +810,12 @@ class VybeScopeBot:
             interval=self.WALLET_TRACKING_INTERVAL_SECONDS,
             name="wallet_tracking_job",
         )
-        
+
         self.application.job_queue.run_repeating(
             whale_alert_job,
             interval=self.WHALE_ALERT_INTERVAL_SECONDS,
             name="whale_alert_job",
         )
-        
 
         self.logger.info("Starting bot polling...")
         self.application.run_polling(allowed_updates=Update.ALL_TYPES)

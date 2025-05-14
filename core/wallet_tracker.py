@@ -158,13 +158,9 @@ async def process_wallet(
                 try:
                     amount_float = float(amount_str)
                     if amount_float == int(amount_float):
-                        amount_formatted = (
-                            f"{int(amount_float):,}"
-                        )
+                        amount_formatted = f"{int(amount_float):,}"
                     else:
-                        amount_formatted = (
-                            f"{amount_float:,}"
-                        )
+                        amount_formatted = f"{amount_float:,}"
                 except (ValueError, TypeError):
                     pass
 

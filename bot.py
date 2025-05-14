@@ -242,14 +242,14 @@ class VybeScopeBot:
                 ],
                 [
                     InlineKeyboardButton(
-                        "Edit Whale Alerts 🐋", callback_data="whale_alerts"
+                        "Add/Remove Whale Alerts ⚙", callback_data="whale_alerts"
                     ),
-                    InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
-                ],
-                [
                     InlineKeyboardButton(
                         "🗑️ Clear Dashboard", callback_data="dashboard_clear"
                     ),
+                ],
+                [
+                    InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
                 ],
             ]
         else:
@@ -295,14 +295,14 @@ class VybeScopeBot:
                 ],
                 [
                     InlineKeyboardButton(
-                        "Whale Alert Options ⚙", callback_data="whale_alerts"
+                        "Add/Remove Whale Alerts⚙", callback_data="whale_alerts"
                     ),
-                    InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
-                ],
-                [
                     InlineKeyboardButton(
                         "🗑️ Clear Dashboard", callback_data="dashboard_clear"
                     ),
+                ],
+                [
+                    InlineKeyboardButton("Back to Main Menu 🔙", callback_data="start"),
                 ],
             ]
 
@@ -412,7 +412,7 @@ class VybeScopeBot:
             removed = remove_tracked_wallet(user_id, text)
             if removed:
                 await update.message.reply_text(
-                    f"✅ Wallet `{text}` removed from your dashboard!"
+                    f"✅ Wallet `{text}` removed from wallet tracking!"
                 )
             else:
                 await update.message.reply_text(
@@ -598,7 +598,7 @@ class VybeScopeBot:
             removed = remove_tracked_wallet(user_id, wallet_address)
             if removed:
                 await query.message.reply_text(
-                    f"✅ Wallet `{wallet_address}` removed from your dashboard!",
+                    f"✅ Wallet `{wallet_address}` removed from wallet tracking!",
                     parse_mode="Markdown",
                 )
             else:
@@ -769,10 +769,16 @@ class VybeScopeBot:
         # Use Telegram's JobQueue to schedule whale alerts
 
         self.application.job_queue.run_repeating(
-            whale_alert_job, interval=self.WHALE_ALERT_INTERVAL_SECONDS, first=10, name="whale_alert_job"
+            whale_alert_job,
+            interval=self.WHALE_ALERT_INTERVAL_SECONDS,
+            first=10,
+            name="whale_alert_job",
         )
         self.application.job_queue.run_repeating(
-            wallet_tracking_job, interval=self.WALLET_TRACKING_INTERVAL_SECONDS, first=30, name="wallet_tracking_job"
+            wallet_tracking_job,
+            interval=self.WALLET_TRACKING_INTERVAL_SECONDS,
+            first=30,
+            name="wallet_tracking_job",
         )
 
         self.logger.info("Starting bot polling...")

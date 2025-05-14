@@ -2,7 +2,7 @@
 
 ### Visit here: [t.me/vybescope_bot](https://t.me/vybescope_bot)
 
->  Note: The Bot Code is deployed on DigitalOcean.
+>  Note: The Bot Code is deployed on a Very Fast VPS (Virtual Private Server)
 
 VybeScope is a feature-rich Python Telegram bot for Solana users, offering real-time wallet tracking, token stats, and whale alerts. Users can connect and monitor multiple wallets, view live balances and 24h changes, and receive instant notifications for large transactions (whale alerts) with customizable thresholds. The bot provides detailed token statistics, top holders, and market data for any Solana token, plus a personal dashboard to manage tracked wallets and alert settings. All data is stored in-memory or lightweight JSON, ensuring privacy and fast setup.
 

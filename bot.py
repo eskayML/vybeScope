@@ -394,19 +394,46 @@ class VybeScopeBot:
             await process_token(user_id, text, context)
 
         elif state == "awaiting_wallet":
-            await process_wallet(user_id, text, context)
-
-        elif state == "dashboard_awaiting_add_wallet":
-            # Validate wallet address format before processing
-            if not re.match(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$", text):
+            status = await process_wallet(user_id, text, context)
+            if status == "validation_error":
                 await update.message.reply_text(
                     "❌ Invalid Solana wallet address format. Please ensure it is a valid Solana address (e.g., 3qArN...)."
                 )
-                self.user_states[user_id] = (
-                    "dashboard_awaiting_add_wallet"  # Keep user in the same state
+                await update.message.reply_text(
+                    "🔍 Enter a Solana wallet address to track its activity (e.g., 3qArN...):"
                 )
-                return
-            await process_wallet(user_id, text, context)
+                self.user_states[user_id] = "awaiting_wallet"
+            elif status == "empty_input":
+                await update.message.reply_text(
+                    "❌ Wallet address cannot be empty! Please enter a valid Solana address."
+                )
+                await update.message.reply_text(
+                    "🔍 Enter a Solana wallet address to track its activity (e.g., 3qArN...):"
+                )
+                self.user_states[user_id] = "awaiting_wallet"
+            # For other statuses like "processed_successfully", "processed_successfully_no_tokens",
+            # "processing_failed_api", "processing_failed_unexpected",
+            # messages are sent by process_wallet, and the state is considered handled.
+
+        elif state == "dashboard_awaiting_add_wallet":
+            status = await process_wallet(user_id, text, context) # process_wallet calls add_tracked_wallet
+            if status == "validation_error":
+                await update.message.reply_text(
+                    "❌ Invalid Solana wallet address format. Please ensure it is a valid Solana address (e.g., 3qArN...)."
+                )
+                await update.message.reply_text("💼 Please enter a valid wallet address to add:")
+                self.user_states[user_id] = "dashboard_awaiting_add_wallet"
+            elif status == "empty_input":
+                await update.message.reply_text(
+                    "❌ Wallet address cannot be empty! Please enter a valid Solana address."
+                )
+                await update.message.reply_text("💼 Please enter a valid wallet address to add:")
+                self.user_states[user_id] = "dashboard_awaiting_add_wallet"
+            elif status in ["processed_successfully", "processed_successfully_no_tokens", "processing_failed_api", "processing_failed_unexpected"]:
+                # process_wallet sent its message (success or API error).
+                # Now, show the dashboard.
+                await self.dashboard_command(update, context)
+            # If state is not re-assigned (e.g. for successful processing), it's cleared by pop.
 
         elif state == "dashboard_awaiting_remove_wallet":
             removed = remove_tracked_wallet(user_id, text)

@@ -50,38 +50,15 @@ async def wallet_prompt(
 
 async def process_wallet(
     user_id: int, wallet_address: str, context: Application
-) -> None:
+) -> str:  # Returns status string
     wallet_address = wallet_address.strip()
     # Check for empty input
     if not wallet_address:
-        keyboard = [
-            [InlineKeyboardButton("Try Again 🔍", callback_data="wallet_tracker")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await context.bot.send_message(
-            chat_id=user_id,
-            text="❌ Wallet address cannot be empty! Please enter a valid Solana address.",
-            reply_markup=reply_markup,
-        )
-        return
+        return "empty_input"  # Caller handles message and re-prompt
 
     # Basic validation for Solana wallet address
     if not re.match(r"^[1-9A-HJ-NP-Za-km-z]{32,44}$", wallet_address):
-        keyboard = [
-            [
-                InlineKeyboardButton(
-                    "Try Another Wallet 🔍", callback_data="wallet_tracker"
-                )
-            ]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        await context.bot.send_message(
-            chat_id=user_id,
-            text="❌ Invalid Solana wallet address format. Please ensure it is a valid Solana address (e.g., 3qArN...).",
-            reply_markup=reply_markup,
-            parse_mode="Markdown",
-        )
-        return
+        return "validation_error"  # Caller handles message and re-prompt
 
     # Send image with caption before fetching balances
     image_path = "assets/wallet_tracking_pepe.jpg"
@@ -146,7 +123,10 @@ async def process_wallet(
                 reply_markup=reply_markup,
                 parse_mode="Markdown",
             )
-            return
+            # Wallet is valid but no tokens, still "processed" in terms of validation
+            # Add to dashboard if it's a new valid wallet, even if empty, so user sees it.
+            add_tracked_wallet(user_id, wallet_address)
+            return "processed_successfully_no_tokens"
 
         # --- Build the Message ---
         message_text = "✅ Successfully Started Tracking!\n"
@@ -176,49 +156,33 @@ async def process_wallet(
 
                 # Format amount (display raw value with commas)
                 try:
-                    # Convert to float/int first for comma formatting
                     amount_float = float(amount_str)
-                    # Check if it has decimal part after float conversion
                     if amount_float == int(amount_float):
                         amount_formatted = (
-                            f"{int(amount_float):,}"  # Format as integer with commas
+                            f"{int(amount_float):,}"
                         )
                     else:
-                        # If it has decimals inherently (unlikely based on API but safe), format as float
                         amount_formatted = (
-                            f"{amount_float:,}"  # Format as float with commas
+                            f"{amount_float:,}"
                         )
                 except (ValueError, TypeError):
-                    pass  # Keep raw string fallback
+                    pass
 
                 # Format current value
                 try:
                     value_usd_float = float(value_usd_str)
                     value_usd_formatted = f"${value_usd_float:,.2f}"
                 except (ValueError, TypeError):
-                    pass  # Keep fallback
+                    pass
 
                 # Format current price
                 try:
                     price_usd_float = float(price_usd_str)
-                    # Use more precision for price
                     price_usd_formatted = f"${price_usd_float:,.6f}".rstrip("0").rstrip(
                         "."
                     )
                 except (ValueError, TypeError):
-                    pass  # Keep fallback
-
-                # Format price change (percentage)
-                try:
-                    pass  # Placeholder if no other logic was here
-                except (ValueError, TypeError):
-                    pass  # Keep fallback
-
-                # Format value change (absolute)
-                try:
-                    pass  # Placeholder if no other logic was here
-                except (ValueError, TypeError):
-                    pass  # Keep fallback
+                    pass
 
                 message_text += f"\n--- *{symbol}* ({name}) ---\n"
                 message_text += f"   🔢 *Amount:* {amount_formatted}\n"
@@ -226,10 +190,8 @@ async def process_wallet(
                 message_text += f"\n   📈 *Price:* {price_usd_formatted}"
                 message_text += "\n"
 
-        # Add wallet to dashboard after successful fetch
         add_tracked_wallet(user_id, wallet_address)
 
-        # Common Keyboard
         keyboard = [
             [
                 InlineKeyboardButton(
@@ -252,7 +214,6 @@ async def process_wallet(
             parse_mode="Markdown",
             disable_web_page_preview=True,
         )
-        # Delete the image message in a stylish way
         if image_msg:
             time.sleep(3)  # Optional delay for better UX
             try:
@@ -261,9 +222,9 @@ async def process_wallet(
                 )
             except Exception as e:
                 logger.warning(f"Failed to delete image message: {e}")
+        return "processed_successfully"
 
     except requests.exceptions.HTTPError as e:
-        # Handle potential 404 Not Found for wallets with no activity
         if e.response.status_code == 404:
             keyboard = [
                 [
@@ -281,7 +242,6 @@ async def process_wallet(
                 parse_mode="Markdown",
             )
         else:
-            # Handle other HTTP errors
             logger.error(f"HTTP error fetching balance data for {wallet_address}: {e}")
             keyboard = [
                 [InlineKeyboardButton("Try Again 🔍", callback_data="wallet_tracker")]
@@ -292,6 +252,7 @@ async def process_wallet(
                 text="❌ Couldn't fetch wallet balance data right now. Please ensure the API key is valid and the API is reachable.",
                 reply_markup=reply_markup,
             )
+        return "processing_failed_api"  # Wallet was valid, but API failed
     except requests.RequestException as e:
         logger.error(f"Network error fetching wallet data for {wallet_address}: {e}")
         keyboard = [
@@ -303,6 +264,7 @@ async def process_wallet(
             text="❌ Network error: Couldn't connect to the API. Please check your connection.",
             reply_markup=reply_markup,
         )
+        return "processing_failed_api"  # Wallet was valid, but API failed
     except Exception as e:
         logger.exception(
             f"An unexpected error occurred processing wallet {wallet_address}: {e}"
@@ -316,6 +278,7 @@ async def process_wallet(
             text="❌ An unexpected error occurred. The developers have been notified.",
             reply_markup=reply_markup,
         )
+        return "processing_failed_unexpected"  # Wallet was valid, but other error
 
 
 async def check_recent_transactions(wallet_address, user_id, application):

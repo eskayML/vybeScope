@@ -5,7 +5,7 @@ import time
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.error import BadRequest
-from telegram.ext import Application
+from telegram.ext import CallbackContext  # Modified import
 
 from api import fetch_whale_transaction_for_single_token  # Modified
 from core.dashboard import (
@@ -13,13 +13,16 @@ from core.dashboard import (
     add_tracked_whale_alert_token,
     get_token_alert_settings,
     get_tracked_whale_alert_tokens,
+    remove_tracked_whale_alert_token,  # Added
 )
 
 logger = logging.getLogger(__name__)
 
 
 # Command to access Whale Alert features
-async def whale_alerts_command(update: Update, context: Application) -> None:
+async def whale_alerts_command(
+    update: Update, context: CallbackContext
+) -> None:  # Modified context type
     """Handles the /whalealerts command or button press."""
     message = update.callback_query.message if update.callback_query else update.message
     user_id = update.effective_user.id
@@ -40,20 +43,20 @@ async def whale_alerts_command(update: Update, context: Application) -> None:
         toggle_data = f"toggle_token_{'off' if settings['enabled'] else 'on'}:{token}"
         threshold_text = f"Set Threshold (${settings['threshold']})"
         threshold_data = f"set_token_threshold:{token}"
+        delete_text = f"🗑️"  
+        delete_data = f"delete_token_alert:{token}"  # Added
         keyboard.append(
             [
                 InlineKeyboardButton(toggle_text, callback_data=toggle_data),
                 InlineKeyboardButton(threshold_text, callback_data=threshold_data),
+                InlineKeyboardButton(delete_text, callback_data=delete_data),  # Added
             ]
         )
-    # Add Whale Alert and Remove Whale Alert buttons
+    # Add Whale Alert button
     keyboard.append(
         [
             InlineKeyboardButton(
                 "➕ Add Whale Alert", callback_data="dashboard_add_whale_alert"
-            ),
-            InlineKeyboardButton(
-                "➖ Remove Whale Alert", callback_data="dashboard_remove_whale_alert"
             ),
         ]
     )
@@ -79,7 +82,9 @@ async def whale_alerts_command(update: Update, context: Application) -> None:
 
 # Set threshold (triggered by button in whale_alerts_command)
 async def set_threshold_prompt(
-    update: Update, context: Application, user_states: dict
+    update: Update,
+    context: CallbackContext,
+    user_states: dict,  # Modified context type
 ) -> None:
     """Prompts the user to enter a threshold amount (handles command or callback)."""
     query = update.callback_query
@@ -94,14 +99,33 @@ async def set_threshold_prompt(
         await query.answer()  # Acknowledge button press
 
     user_id = user.id
-    await message.reply_text(
-        "💰 Enter your minimum USD value threshold for whale alerts (e.g., 50000), or type 'skip':"
-    )
-    user_states[user_id] = "awaiting_threshold"
+
+    token_address = None
+    if query and query.data:
+        if query.data.startswith("set_token_threshold:"):
+            token_address = query.data.split(":", 1)[1]
+        elif query.data.startswith(
+            "change_threshold:"
+        ):  # Handles callback from alert message
+            token_address = query.data.split(":", 1)[1]
+
+    if token_address:
+        # This is the flow for modifying a specific token's threshold
+        await message.reply_text(
+            f"💰 Enter new threshold for token `{token_address[:6]}...` (e.g., 50000), or type 'skip':"
+        )
+        user_states[user_id] = f"awaiting_token_threshold_{token_address}"
+    else:
+        # This is the flow for the generic /threshold command or other contexts
+        await message.reply_text(
+            "💰 Enter your minimum USD value threshold for whale alerts (e.g., 50000), or type 'skip':"
+        )
+        user_states[user_id] = "awaiting_threshold"  # The old generic state
 
 
-async def whale_alert_job(application: Application):
+async def whale_alert_job(context: CallbackContext):  # Modified signature
     """Checks whale transactions for all users with alerts enabled and sends notifications."""
+    application = context.job.data  # Get Application instance from job context
     dashboard = _load_dashboard()
     for user_id, user_data in dashboard.items():
         whale_alert = user_data.get("whale_alert", {})
@@ -171,7 +195,9 @@ async def whale_alert_job(application: Application):
 
 
 # Handler for Track Whale Alerts button from token stats
-async def track_token_whale_alert(update: Update, context: Application) -> None:
+async def track_token_whale_alert(
+    update: Update, context: CallbackContext
+) -> None:  # Modified context type
     """Handles adding a token to whale alerts from token stats screen."""
     query = update.callback_query
     await query.answer()
@@ -220,3 +246,31 @@ async def track_token_whale_alert(update: Update, context: Application) -> None:
             "This token is already in your whale alerts! 🐳\n"
         )
         await whale_alerts_command(update, context)
+
+
+# Handler for Remove Whale Alert button
+async def remove_whale_alert_handler(
+    update: Update, context: CallbackContext
+) -> None:  # Modified context type
+    """Handles removing a specific whale alert token."""
+    query = update.callback_query
+    await query.answer()
+    user_id = update.effective_user.id
+
+    # Extract token address from callback data
+    # Format is "delete_token_alert:{token_address}"
+    token_address = query.data.replace("delete_token_alert:", "")
+
+    removed = remove_tracked_whale_alert_token(user_id, token_address)
+
+    if removed:
+        await query.message.reply_text(
+            f"🗑️ Whale alert for token `{token_address}` removed."
+        )
+    else:
+        await query.message.reply_text(
+            f"Could not find whale alert for token `{token_address}`."
+        )
+
+    # Refresh the whale alerts menu
+    await whale_alerts_command(update, context)

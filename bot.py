@@ -10,6 +10,7 @@ from telegram import BotCommand, InlineKeyboardButton, InlineKeyboardMarkup, Upd
 from telegram.constants import ChatAction
 from telegram.ext import (
     Application,
+    CallbackContext,  # Added
     CallbackQueryHandler,
     CommandHandler,
     MessageHandler,
@@ -38,12 +39,13 @@ from core.wallet_tracker import (
 from core.wallet_tracker import (
     wallet_prompt as core_wallet_prompt,  # Rename to avoid clash
 )
-from core.whale_alerts import (
-    set_threshold_prompt as core_set_threshold_prompt,  # Rename to avoid clash
-)
 from core.whale_alerts import (  # Import job directly
+    remove_whale_alert_handler,  # Added
     whale_alert_job,
     whale_alerts_command,
+)
+from core.whale_alerts import (
+    set_threshold_prompt as core_set_threshold_prompt,  # Rename to avoid clash
 )
 
 
@@ -70,7 +72,7 @@ class VybeScopeBot:
         )
         self.application = None
 
-    async def start(self, update: Update, context: Application) -> None:
+    async def start(self, update: Update, context: CallbackContext) -> None:
         """Sends the welcome message and main menu."""
         await context.bot.send_chat_action(
             chat_id=update.effective_chat.id, action=ChatAction.TYPING
@@ -174,39 +176,39 @@ class VybeScopeBot:
         except Exception as e:
             self.logger.error(f"Unexpected error in start handler: {e}")
 
-    async def threshold_command(self, update: Update, context: Application) -> None:
+    async def threshold_command(self, update: Update, context: CallbackContext) -> None:
         """Handles the /threshold command, triggers the prompt."""
         await context.bot.send_chat_action(
             chat_id=update.effective_chat.id, action=ChatAction.TYPING
         )
         await core_set_threshold_prompt(update, context, self.user_states)
 
-    async def token_command(self, update: Update, context: Application) -> None:
+    async def token_command(self, update: Update, context: CallbackContext) -> None:
         """Handles the /token command, triggers the prompt."""
         await context.bot.send_chat_action(
             chat_id=update.effective_chat.id, action=ChatAction.TYPING
         )
         await core_token_prompt(update, context, self.user_states)
 
-    async def wallet_command(self, update: Update, context: Application) -> None:
+    async def wallet_command(self, update: Update, context: CallbackContext) -> None:
         """Handles the /wallet command, triggers the prompt."""
         await context.bot.send_chat_action(
             chat_id=update.effective_chat.id, action=ChatAction.TYPING
         )
         await core_wallet_prompt(update, context, self.user_states)
 
-    async def check_command(self, update: Update, context: Application) -> None:
+    async def check_command(self, update: Update, context: CallbackContext) -> None:
         """Handles the /check command, directly checks highest tx."""
         await context.bot.send_chat_action(
             chat_id=update.effective_chat.id, action=ChatAction.TYPING
         )
         await whale_alerts_command(update, context)
 
-    async def agent_command(self, update: Update, context: Application) -> None:
+    async def agent_command(self, update: Update, context: CallbackContext) -> None:
         """Handles the /agent command, opens the Research Agent mini app."""
         await send_research_agent_miniapp_button(update, context)
 
-    async def dashboard_command(self, update: Update, context: Application) -> None:
+    async def dashboard_command(self, update: Update, context: CallbackContext) -> None:
         """Shows the user's dashboard: tracked wallets and whale alert settings."""
         await context.bot.send_chat_action(
             chat_id=update.effective_chat.id, action=ChatAction.TYPING
@@ -326,7 +328,7 @@ class VybeScopeBot:
                 parse_mode="Markdown",
             )
 
-    async def handle_text(self, update: Update, context: Application) -> None:
+    async def handle_text(self, update: Update, context: CallbackContext) -> None:
         """Handles text inputs based on the current user state."""
         await context.bot.send_chat_action(
             chat_id=update.effective_user.id, action=ChatAction.TYPING
@@ -524,7 +526,7 @@ class VybeScopeBot:
             self.logger.warning(f"User {user_id} was in an unknown state: {state}")
             await update.message.reply_text("Something went wrong. Please try /start.")
 
-    async def button_handler(self, update: Update, context: Application) -> None:
+    async def button_handler(self, update: Update, context: CallbackContext) -> None:
         """Handles inline keyboard button clicks."""
         await context.bot.send_chat_action(
             chat_id=update.effective_user.id, action=ChatAction.TYPING
@@ -700,16 +702,19 @@ class VybeScopeBot:
         elif callback_data.startswith(
             "set_token_threshold:"
         ) or callback_data.startswith("change_threshold:"):
-            token_address = callback_data.split(":", 1)[1]
-            self.user_states[user_id] = f"awaiting_token_threshold_{token_address}"
-            await query.message.reply_text(
-                f"💰 Enter the new USD threshold for token `{token_address}`:",
-                parse_mode="Markdown",
-            )
+            await self.set_token_threshold_prompt_wrapper(
+                update, context
+            )  # Modified to call wrapper
         else:
             self.logger.info(f"Received unhandled callback_data: {callback_data}")
 
-    async def error_handler(self, update: object, context: Application) -> None:
+    async def set_token_threshold_prompt_wrapper(
+        self, update: Update, context: CallbackContext
+    ) -> None:
+        """Wrapper to call core_set_threshold_prompt with user_states."""
+        await core_set_threshold_prompt(update, context, self.user_states)
+
+    async def error_handler(self, update: object, context: CallbackContext) -> None:
         """Logs errors and sends a user-friendly message."""
         self.logger.error(
             msg="Exception while handling an update:", exc_info=context.error
@@ -801,7 +806,15 @@ class VybeScopeBot:
         self.application.add_handler(
             CallbackQueryHandler(research_agent_handler, pattern="^research_agent$")
         )
-        self.application.add_handler(CallbackQueryHandler(self.button_handler))
+        # Specific patterned handlers should come before the generic button_handler
+        self.application.add_handler(
+            CallbackQueryHandler(
+                remove_whale_alert_handler, pattern="^delete_token_alert:"
+            )
+        )
+        self.application.add_handler(
+            CallbackQueryHandler(self.button_handler)
+        )  # Generic handler last
         self.application.add_error_handler(self.error_handler)
 
         # Use Telegram's JobQueue to schedule whale alerts

@@ -8,7 +8,7 @@ VybeScope is a feature-rich Python Telegram bot for Solana users, offering real-
 
 The intuitive button-based interface makes it easy to add/remove wallets, set whale alert thresholds, and explore token analytics and even Deep Research on Tokens & Protocols using an LLM.
 
-VybeScope is ideal for traders, investors, and enthusiasts who want actionable Solana insights directly in Telegram.
+VybeScope is ideal for traders, investors, and enthusiasts who want quick and actionable  insights on the Solana blockchain directly in Telegram.
 
 
 ## User Interface
@@ -93,14 +93,15 @@ Both notification types operate on configurable intervals (default: 2 minutes), 
    ```
 
 ### Novel Feature - LLM Research Agent 🤖
-An Embedded Telegram Mini Application Has full fledged conversation ability , and can communicate about most information relating to solana and the vybe ecosystem.
+
+This is an Embedded Telegram Mini Application that has full fledged conversation ability , and can communicate about most information relating to solana and the vybe ecosystem.
 ![RESEARCH AGENT DEMO](https://i.ibb.co/zH0gGv7M/Whats-App-Image-2025-05-11-at-00-59-42-6d777cd9.jpg)
 
 
 ### Bonus - ⚡ Quick Commands & Features
 I added available quick commands to augment the already rich User Interface for quick and easy access to different features
 
-Use these commands for quick access to features:
+You can use these commands for quick access to features:
 
 - **/start** – Show main menu & restart the bot
 - **/dashboard** – View your personal dashboard (tracked wallets & whale alert settings)
@@ -122,13 +123,13 @@ Use these commands for quick access to features:
 
 This bot is designed to be lightweight and portable:
 
-- Uses in-memory storage for user data, wallets, and transactions
+- Uses JSON storage for user data, wallets, and transactions (can easily be migrated to MongoDB / Supabase)
 - Communicates with the Vybe API for blockchain data
 - Simple to deploy and run
 
 ## Hackathon Submission
 
-This project is a submission for the Vybe Telegram Bot Challenge. The goal is to create an intuitive and feature-rich Telegram bot that integrates with cryptocurrency wallets/tokens and provides a seamless user experience.
+This project is my submission for the Vybe Telegram Bot Challenge. The goal is to create an intuitive and feature-rich Telegram bot that integrates with cryptocurrency wallets/tokens and provides a seamless user experience.
 
 ## License
 

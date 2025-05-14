@@ -43,7 +43,7 @@ async def whale_alerts_command(
         toggle_data = f"toggle_token_{'off' if settings['enabled'] else 'on'}:{token}"
         threshold_text = f"Set Threshold (${settings['threshold']})"
         threshold_data = f"set_token_threshold:{token}"
-        delete_text = f"🗑️"  
+        delete_text = f"🗑️"
         delete_data = f"delete_token_alert:{token}"  # Added
         keyboard.append(
             [
@@ -112,13 +112,13 @@ async def set_threshold_prompt(
     if token_address:
         # This is the flow for modifying a specific token's threshold
         await message.reply_text(
-            f"💰 Enter new threshold for token `{token_address[:6]}...` (e.g., 50000), or type 'skip':"
+            f"💰 Enter new threshold for token `{token_address[:6]}...` (e.g., 50000)"
         )
         user_states[user_id] = f"awaiting_token_threshold_{token_address}"
     else:
         # This is the flow for the generic /threshold command or other contexts
         await message.reply_text(
-            "💰 Enter your minimum USD value threshold for whale alerts (e.g., 50000), or type 'skip':"
+            "💰 Enter your minimum USD value threshold for whale alerts (e.g., 50000)"
         )
         user_states[user_id] = "awaiting_threshold"  # The old generic state
 

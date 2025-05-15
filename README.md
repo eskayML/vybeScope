@@ -39,6 +39,10 @@ VybeScope is ideal for traders, investors, and enthusiasts who want quick and ac
 
 # Notification System
 I have also tested and validated the scheduled notification system for both whale alerts and wallet tracking.
+
+The bot is built with a fully asynchronous architecture, utilizing non-blocking API calls to ensure responsive performance even when handling multiple concurrent user requests or processing blockchain data in real-time.
+
+
 <table style="border-collapse: collapse; border: none; text-align: center; width: 100%;">
    <tr style="border: none; font-weight: bold;">
       <td style="border: none; width: 33%;">Feature</td>
@@ -57,7 +61,7 @@ I have also tested and validated the scheduled notification system for both whal
    </tr>
 </table>
 
-Both notification types operate on configurable intervals (default: 2 minutes), which you can adjust in the environment settings for your specific monitoring needs.
+Both notification types operate on configurable intervals (default: 1 minute), which you can adjust in the environment settings for your specific monitoring needs.
 
 ## Quick Start & Local Setup
 1. Clone the repo and install requirements:
@@ -80,11 +84,11 @@ Both notification types operate on configurable intervals (default: 2 minutes), 
    Some optional env parameters you could also include are
 
    ```
-   WHALE_ALERT_INTERVAL_SECONDS = 120 
-   # not adding this env variable leaves the default value in the code at 120 (2 minutes)
+   WHALE_ALERT_INTERVAL_SECONDS = 60 
+   # not adding this env variable leaves the default value in the code at 60 (1 minute)
 
-   WALLET_TRACKING_INTERVAL_SECONDS = 120
-   # likewise not adding this env variable leaves the default value as 120 (2 minutes)
+   WALLET_TRACKING_INTERVAL_SECONDS = 60
+   # likewise not adding this env variable leaves the default value as 60 (1 minute)
    ```
 
 4. Start the bot:

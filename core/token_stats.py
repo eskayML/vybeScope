@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 import time
@@ -53,7 +54,7 @@ async def token_prompt(update: Update, context: Application, user_states: dict) 
 async def show_top_holders(user_id: int, token_address: str, context: Application):
     await context.bot.send_chat_action(chat_id=user_id, action=ChatAction.TYPING)
     try:
-        holders = fetch_top_token_holders(token_address)
+        holders = await fetch_top_token_holders(token_address)
         holders_text = format_top_holders_text(holders)
         keyboard = [
             [
@@ -143,7 +144,7 @@ async def process_token(user_id: int, token_input: str, context: Application) ->
     # Fetch stats using the determined token_address
     try:
         # Assuming fetch_token_stats takes the address
-        data = fetch_token_stats(token_address)
+        data = await fetch_token_stats(token_address)
 
         # --- Updated Data Extraction ---
         price = data.get("price")
@@ -297,3 +298,70 @@ async def process_token(user_id: int, token_input: str, context: Application) ->
             text="❌ An unexpected error occurred.",
             reply_markup=reply_markup,
         )
+
+
+async def get_token_stats(token_address: str):
+    """Fetches and processes token statistics."""
+    try:
+        return await fetch_token_stats(token_address)
+    except requests.exceptions.HTTPError as e:
+        if e.response.status_code == 404:
+            logger.warning(f"Token not found: {token_address}")
+            return {"error": "Token not found", "status_code": 404}
+        else:
+            logger.error(f"HTTP error fetching token stats for {token_address}: {e}")
+            return {"error": "API error", "status_code": e.response.status_code}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request error fetching token stats for {token_address}: {e}")
+        return {"error": "Request error"}
+    except Exception as e:
+        logger.exception(
+            f"Unexpected error fetching token stats for {token_address}: {e}"
+        )
+        return {"error": "Unexpected error"}
+
+
+async def get_top_holders(token_address: str, count: int = 5):
+    """Fetches top token holders."""
+    try:
+        return await fetch_top_token_holders(token_address, count)
+    except requests.exceptions.HTTPError as e:
+        logger.error(f"HTTP error fetching top holders for {token_address}: {e}")
+        return {"error": "API error", "status_code": e.response.status_code}
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request error fetching top holders for {token_address}: {e}")
+        return {"error": "Request error"}
+    except Exception as e:
+        logger.exception(
+            f"Unexpected error fetching top holders for {token_address}: {e}"
+        )
+        return {"error": "Unexpected error"}
+
+
+async def format_token_stats_message(token_address: str) -> str:
+    """Formats token statistics into a message string."""
+    token_data = await get_token_stats(token_address)
+    if not token_data or token_data.get("error"):
+        return f"❌ Error fetching token data for {token_address}: {token_data.get('error', 'Unknown error')}"
+
+    top_holders_data = await get_top_holders(token_address, 5)
+    if not top_holders_data or top_holders_data.get("error"):
+        logger.warning(
+            f"Could not fetch top holders for {token_address}: {top_holders_data.get('error', 'Unknown error')}"
+        )
+        holders_table_str = "Top holders data is currently unavailable."
+    else:
+        # Further formatting logic can be added here
+        holders_table_str = format_top_holders_text(top_holders_data)
+
+    return f"Token Stats:\n{token_data}\n\nTop Holders:\n{holders_table_str}"
+
+
+async def main():
+    token_address = "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzL7X6XPAg82L4"  # Example token
+    stats_message = await format_token_stats_message(token_address)
+    print(stats_message)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

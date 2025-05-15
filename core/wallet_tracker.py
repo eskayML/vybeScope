@@ -11,14 +11,14 @@ from telegram.ext import Application
 
 from api import fetch_wallet_activity, get_wallet_token_balance
 
-from .dashboard import _load_dashboard, add_tracked_wallet
+from .dashboard import _load_dashboard, add_tracked_wallet, get_user_dashboard
 from .utils import format_transaction_details
 
 logger = logging.getLogger(__name__)
 
 
 WALLET_TRACKING_INTERVAL_SECONDS = int(
-    os.getenv("WALLET_TRACKING_INTERVAL_SECONDS", 120)
+    os.getenv("WALLET_TRACKING_INTERVAL_SECONDS", 60)
 )
 
 # Dictionary to store the latest transaction timestamp for each wallet
@@ -74,7 +74,7 @@ async def process_wallet(
 
     try:
         # Call the balance function
-        balance_data = get_wallet_token_balance(wallet_address)
+        balance_data = await get_wallet_token_balance(wallet_address)
 
         # --- Extract Core Information ---
         total_value_usd_str = balance_data.get("totalTokenValueUsd", "0")
@@ -286,6 +286,9 @@ async def check_recent_transactions(wallet_address, user_id, application):
         user_id (int): The user ID who is tracking this wallet
         application (Application): The telegram bot application object
     """
+    # Ensure wallet is still tracked
+    if wallet_address not in get_user_dashboard(user_id).get("wallets", []):
+        return
     try:
         start_date = int(
             (
@@ -298,9 +301,11 @@ async def check_recent_transactions(wallet_address, user_id, application):
         last_tx_time = last_transaction_times.get(wallet_address, 0)
 
         # Fetch recent wallet activity using our startDate
-        transactions = fetch_wallet_activity(wallet_address, startDate=start_date)
+        recent_transactions = await fetch_wallet_activity(
+            wallet_address, startDate=start_date
+        )
 
-        if not transactions:
+        if not recent_transactions:
             logger.debug(f"No recent transactions found for wallet {wallet_address}")
             return
 
@@ -308,7 +313,7 @@ async def check_recent_transactions(wallet_address, user_id, application):
         new_transactions = []
         latest_block_time = last_tx_time
 
-        for tx in transactions:
+        for tx in recent_transactions:
             block_time = tx.get("blockTime", 0)
 
             # Update our tracking of the latest transaction time
@@ -331,7 +336,7 @@ async def check_recent_transactions(wallet_address, user_id, application):
 
             # Process only the first new transaction
             first_tx = new_transactions[0]
-            tx_formatted = format_transaction_details(first_tx, wallet_address)
+            tx_formatted = await format_transaction_details(first_tx, wallet_address)
 
             # Create message text
             message = "🚨 *New Transaction Detected!*\n\n"
@@ -375,7 +380,7 @@ async def show_recent_transactions(
 
     try:
         # Fetch recent activity (both sent and received)
-        transactions = fetch_wallet_activity(wallet_address)
+        transactions = await fetch_wallet_activity(wallet_address)
 
         if not transactions:
             await context.bot.send_message(
@@ -391,7 +396,9 @@ async def show_recent_transactions(
         response_text = f"📜 *Recent Transactions for Wallet:* `{wallet_address}`\n\n"
         for tx in latest_transactions:
             # Ensure that only the transaction dictionary is passed
-            response_text += format_transaction_details(tx, wallet_address) + "\n---\n"
+            response_text += (
+                await format_transaction_details(tx, wallet_address) + "\n---\n"
+            )
 
         keyboard = [
             [
@@ -427,15 +434,11 @@ async def wallet_tracking_job(application):
     This function is meant to be called periodically by the job queue in bot.py.
     """
     try:
-        # Load the dashboard data to get all tracked wallets
-        dashboard = _load_dashboard()
-
-        # Process each user's tracked wallets
-        for user_id, user_data in dashboard.items():
-            wallets = user_data.get("wallets", [])
+        # Iterate over users dynamically, fetching live tracked wallets
+        for user_id_str in list(_load_dashboard().keys()):
+            user_id = int(user_id_str)
+            wallets = get_user_dashboard(user_id).get("wallets", [])
             for wallet_address in wallets:
-                await check_recent_transactions(
-                    wallet_address, int(user_id), application
-                )
+                await check_recent_transactions(wallet_address, user_id, application)
     except Exception as e:
         logger.error(f"Error in wallet tracking job: {str(e)}")

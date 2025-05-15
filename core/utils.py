@@ -1,10 +1,23 @@
+import logging
 from datetime import datetime
 from decimal import Decimal, InvalidOperation
 
 from api import fetch_token_stats  # ADDED IMPORT
 
+logger = logging.getLogger(__name__)
 
-def format_transaction_details(tx: dict, wallet_address: str) -> str:
+
+async def get_token_symbol(token_address: str) -> str:  # Changed
+    """Fetches the token symbol for a given token address."""
+    try:
+        token_data = await fetch_token_stats(token_address)  # Changed
+        return token_data.get("symbol", "Unknown Token")
+    except Exception as e:
+        logger.error(f"Error fetching token symbol for {token_address}: {e}")
+        return "Unknown Token"
+
+
+async def format_transaction_details(tx: dict, wallet_address: str) -> str:  # Changed
     """Formats the details of a single transaction dictionary into a readable string,
     tailored to the perspective of the given wallet_address.
     """
@@ -54,13 +67,11 @@ def format_transaction_details(tx: dict, wallet_address: str) -> str:
         final_symbol_known = True
     elif mint_address:
         try:
-            token_stats = fetch_token_stats(mint_address)
-            fetched_symbol_from_api = token_stats.get("symbol")
-            if fetched_symbol_from_api:
-                final_symbol = fetched_symbol_from_api
+            final_symbol = await get_token_symbol(mint_address)  # Changed
+            if final_symbol:
                 final_symbol_known = True
         except Exception:
-            # If fetch_token_stats fails, proceed to fallback (USD value)
+            # If get_token_symbol fails, proceed to fallback (USD value)
             pass
 
     if final_symbol_known and amount_str != "N/A":

@@ -58,10 +58,10 @@ class VybeScopeBot:
             raise ValueError("TELEGRAM_TOKEN not found in environment variables.")
         self.VYBE_API_KEY = os.getenv("VYBE_API_KEY")
         self.WHALE_ALERT_INTERVAL_SECONDS = int(
-            os.getenv("WHALE_ALERT_INTERVAL_SECONDS", 120)
+            os.getenv("WHALE_ALERT_INTERVAL_SECONDS", 60)
         )
         self.WALLET_TRACKING_INTERVAL_SECONDS = int(
-            os.getenv("WALLET_TRACKING_INTERVAL_SECONDS", 120)
+            os.getenv("WALLET_TRACKING_INTERVAL_SECONDS", 60)
         )
         self.user_thresholds = {}
         self.user_states = {}

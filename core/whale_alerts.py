@@ -43,7 +43,7 @@ async def whale_alerts_command(
         toggle_data = f"toggle_token_{'off' if settings['enabled'] else 'on'}:{token}"
         threshold_text = f"Set Threshold (${settings['threshold']})"
         threshold_data = f"set_token_threshold:{token}"
-        delete_text = f"🗑️"
+        delete_text = "🗑️"  # Use regular string instead of f-string
         delete_data = f"delete_token_alert:{token}"  # Added
         keyboard.append(
             [
@@ -127,15 +127,20 @@ async def whale_alert_job(context: CallbackContext):  # Modified signature
     """Checks whale transactions for all users with alerts enabled and sends notifications."""
     application = context.job.data  # Get Application instance from job context
     dashboard = _load_dashboard()
-    for user_id, user_data in dashboard.items():
-        whale_alert = user_data.get("whale_alert", {})
-        tokens_dict = whale_alert.get("tokens", {})
-        for token_address, settings in tokens_dict.items():
+    for user_id_str in list(dashboard.keys()):
+        user_id = int(user_id_str)
+        # Iterate live tokens list so removals/disables skip fetch
+        for token_address in get_tracked_whale_alert_tokens(user_id):
+            settings = get_token_alert_settings(user_id, token_address)
             if not settings.get("enabled", False):
                 continue
-            threshold = settings.get("threshold", 5)
+            threshold = settings.get("threshold", 50000)
             try:
-                tx = fetch_whale_transaction_for_single_token(
+                # Re-check still enabled before API call
+                settings = get_token_alert_settings(user_id, token_address)
+                if not settings.get("enabled", False):
+                    continue
+                tx = await fetch_whale_transaction_for_single_token(
                     token_address, min_amount_usd=threshold
                 )
                 if not tx:
@@ -178,6 +183,15 @@ async def whale_alert_job(context: CallbackContext):  # Modified signature
                         ]
                     ]
                 )
+                # After computing tx and before sending, re-validate tracking status
+                # Cancel if user disabled or removed this alert
+                current_tokens = get_tracked_whale_alert_tokens(user_id)
+                if token_address not in current_tokens:
+                    continue
+                current_settings = get_token_alert_settings(user_id, token_address)
+                if not current_settings.get("enabled", False):
+                    continue
+
                 try:
                     await application.bot.send_message(
                         chat_id=user_id,

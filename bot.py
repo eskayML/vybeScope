@@ -822,12 +822,14 @@ class VybeScopeBot:
             wallet_tracking_job,
             interval=self.WALLET_TRACKING_INTERVAL_SECONDS,
             name="wallet_tracking_job",
+            data=self.application,  # Pass application instance
         )
 
         self.application.job_queue.run_repeating(
             whale_alert_job,
             interval=self.WHALE_ALERT_INTERVAL_SECONDS,
             name="whale_alert_job",
+            data=self.application,  # Pass application instance
         )
 
         self.logger.info("Starting bot polling...")

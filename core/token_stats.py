@@ -101,22 +101,11 @@ async def process_token(user_id: int, token_input: str, context: Application) ->
         if token_symbol in TOKEN_ADDRESS_MAP:
             token_address = TOKEN_ADDRESS_MAP[token_symbol]
         else:
-            # Try fetching by symbol directly if API supports it, otherwise error
-            # For now, let's stick to the known map or direct address input
-            keyboard = [
-                [
-                    InlineKeyboardButton(
-                        "Try Another Token/Address 📈", callback_data="token_stats"
-                    )
-                ]
-            ]
-            reply_markup = InlineKeyboardMarkup(keyboard)
+            # Unknown symbol: inform user (prompt will be re-triggered by handler)
             await context.bot.send_message(
-                chat_id=user_id,
-                text=f"❌ Unknown token symbol: {token_symbol}. Please provide a known symbol (e.g. WIF ,PYTH, JTO, BONK, TRUMP) or the full contract address.",
-                reply_markup=reply_markup,
+                chat_id=user_id, text=f"❌ Unknown token symbol: {token_symbol}."
             )
-            return
+            return "unknown_symbol"
 
     if not token_address:
         # This case should ideally be caught above, but as a safeguard:

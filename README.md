@@ -48,13 +48,13 @@ The bot is built with a fully asynchronous architecture, utilizing non-blocking 
       <td style="border: none; width: 33%;">Feature</td>
       <td style="border: none; width: 33%;">Description</td>
       <td style="border: none; width: 33%;">Demo</td>
-   </tr>
-   <tr style="border: none;">
+      </tr>
+      <tr style="border: none;">
       <td style="border: none; width: 33%;">Wallet Transfer Alerts</td>
       <td style="border: none; width: 33%;">Receive instant notifications whenever your tracked wallets send or receive funds. The system monitors transactions in real-time and delivers detailed alerts showing transaction amount, token type, and wallet addresses involved. Customize tracking for multiple wallets simultaneously.</td>
       <td style="border: none; width: 33%;"><img src="https://i.postimg.cc/HkQ8V3BY/wallet-tracking-demo.jpg" alt="Wallet Alert Example" width="250"/></td>
-   </tr>
-   <tr style="border: none;">
+      </tr>
+      <tr style="border: none;">
       <td style="border: none; width: 33%;">Whale Transaction Alerts</td>
       <td style="border: none; width: 33%;">Stay ahead of the market with customizable whale alerts. Set your own thresholds for transaction sizes to monitor large trades that could impact token prices. Each alert provides detailed information including transaction value, percentage of total supply moved, and links to explore the transaction further.</td>
       <td style="border: none; width: 33%;"><img src="https://i.postimg.cc/0NPMmmBp/whale-alert-demo.jpg" alt="Whale Alert Example" width="250"/></td>
@@ -127,7 +127,7 @@ You can use these commands for quick access to features:
 
 This bot is designed to be lightweight and portable:
 
-- Uses JSON storage for user data, wallets, and transactions (can easily be migrated to MongoDB / Supabase)
+- Uses JSON storage in `user_dashboard.json` for user data, wallets, and transactions (can easily be migrated to MongoDB / Supabase)
 - Communicates with the Vybe API for blockchain data
 - Simple to deploy and run
 

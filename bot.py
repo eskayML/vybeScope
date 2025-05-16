@@ -393,7 +393,12 @@ class VybeScopeBot:
                 self.user_states[user_id] = "awaiting_threshold"
 
         elif state == "awaiting_token":
-            await process_token(user_id, text, context)
+            # Process token input and handle unknown symbol by re-triggering prompt
+            status = await process_token(user_id, text, context)
+            if status == "unknown_symbol":
+                # Trigger the token prompt again (same as /token or token_stats callback)
+                await core_token_prompt(update, context, self.user_states)
+            return
 
         elif state == "awaiting_wallet":
             status = await process_wallet(user_id, text, context)

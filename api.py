@@ -30,7 +30,7 @@ async def fetch_whale_transaction(min_amount_usd=50000):
     start_date = int(
         (datetime.now() - timedelta(seconds=alert_intervals - 2)).timestamp()
     )
-    url = f"{BASE_URL}/token/transfers?startDate={start_date}"
+    url = f"{BASE_URL}/token/transfers?timeStart={start_date}"
 
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=HEADERS) as response:
@@ -82,7 +82,7 @@ async def fetch_whale_transaction_for_single_token(
         (datetime.now() - timedelta(seconds=alert_intervals - 2)).timestamp()
     )
 
-    url = f"{BASE_URL}/token/transfers?mintAddress={mintAddress}&startDate={start_date}&limit={limit}"
+    url = f"{BASE_URL}/token/transfers?mintAddress={mintAddress}&timeStart={start_date}&limit={limit}"
     async with aiohttp.ClientSession() as session:
         async with session.get(url, headers=HEADERS) as response:
             response.raise_for_status()

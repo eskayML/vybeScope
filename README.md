@@ -99,6 +99,7 @@ Both notification types operate on configurable intervals (default: 1 minute), w
 ### Novel Feature - LLM Research Agent 🤖
 
 This is an Embedded Telegram Mini Application that has full fledged conversation ability , and can communicate about most information relating to solana and the vybe ecosystem.
+
 ![RESEARCH AGENT DEMO](https://i.postimg.cc/N0Zsz6qk/image.png)
 
 
